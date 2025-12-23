@@ -67,3 +67,14 @@ export {
   getUsageStats,
   getAvailablePlans,
 } from './subscription.service';
+
+// Analytics Service
+export {
+  getOverview,
+  getScreenshotStats as getAnalyticsScreenshotStats,
+  getUsageOverTime,
+  getErrorBreakdown,
+  getPopularUrls,
+  getApiKeyStats,
+  recordUsage,
+} from './analytics.service';

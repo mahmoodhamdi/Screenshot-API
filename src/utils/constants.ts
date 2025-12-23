@@ -88,6 +88,17 @@ export const ERROR_CODES = {
   GENERAL_SERVICE_UNAVAILABLE: 'GENERAL_SERVICE_UNAVAILABLE',
   GENERAL_NOT_FOUND: 'GENERAL_NOT_FOUND',
   GENERAL_BAD_REQUEST: 'GENERAL_BAD_REQUEST',
+
+  // Simplified error codes for middleware
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  FORBIDDEN: 'FORBIDDEN',
+  NOT_FOUND: 'NOT_FOUND',
+  CONFLICT: 'CONFLICT',
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+  DATABASE_ERROR: 'DATABASE_ERROR',
+  USAGE_LIMIT_EXCEEDED: 'USAGE_LIMIT_EXCEEDED',
+  PAYMENT_REQUIRED: 'PAYMENT_REQUIRED',
 } as const;
 
 // ============================================
@@ -154,6 +165,28 @@ export const ERROR_MESSAGES: Record<string, string> = {
   [ERROR_CODES.GENERAL_SERVICE_UNAVAILABLE]: 'Service is temporarily unavailable',
   [ERROR_CODES.GENERAL_NOT_FOUND]: 'Resource not found',
   [ERROR_CODES.GENERAL_BAD_REQUEST]: 'Bad request',
+
+  // Simplified error messages for middleware
+  [ERROR_CODES.UNAUTHORIZED]: 'Authentication required',
+  [ERROR_CODES.FORBIDDEN]: 'Access denied',
+  [ERROR_CODES.NOT_FOUND]: 'Resource not found',
+  [ERROR_CODES.CONFLICT]: 'Resource already exists',
+  [ERROR_CODES.VALIDATION_ERROR]: 'Validation failed',
+  [ERROR_CODES.INTERNAL_ERROR]: 'An unexpected error occurred',
+  [ERROR_CODES.DATABASE_ERROR]: 'Database error occurred',
+  [ERROR_CODES.USAGE_LIMIT_EXCEEDED]: 'Usage limit exceeded',
+  [ERROR_CODES.PAYMENT_REQUIRED]: 'Payment required to access this feature',
+
+  // Middleware-specific messages
+  MISSING_TOKEN: 'Authentication token is required',
+  INVALID_TOKEN: 'Invalid or expired authentication token',
+  USER_NOT_FOUND: 'User not found',
+  ACCOUNT_DISABLED: 'User account is disabled',
+  MISSING_API_KEY: 'API key is required',
+  INVALID_API_KEY: 'Invalid API key',
+  MISSING_AUTHENTICATION: 'Authentication is required',
+  INSUFFICIENT_PERMISSIONS: 'Insufficient permissions to perform this action',
+  EMAIL_NOT_VERIFIED: 'Email verification is required',
 };
 
 // ============================================

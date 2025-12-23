@@ -372,21 +372,85 @@ export const checkRateLimit = async (
   }
 };
 
+// ============================================
+// Named Exports for Convenience
+// ============================================
+
+/**
+ * Direct access to the Redis client for low-level operations
+ * Note: Use with caution - prefer the helper functions
+ */
+export const redis = {
+  /**
+   * Get a Redis client for direct operations
+   * Returns an object with common Redis methods that work with the internal client
+   */
+  multi: () => {
+    if (!redisClient) throw new Error('Redis not connected');
+    return redisClient.multi();
+  },
+  keys: async (pattern: string): Promise<string[]> => {
+    if (!redisClient) return [];
+    return redisClient.keys(pattern);
+  },
+  del: async (...keys: string[]): Promise<number> => {
+    if (!redisClient) return 0;
+    return redisClient.del(...keys);
+  },
+  get: async (key: string): Promise<string | null> => {
+    if (!redisClient) return null;
+    return redisClient.get(key);
+  },
+  set: async (key: string, value: string, ttlSeconds?: number): Promise<'OK' | null> => {
+    if (!redisClient) return null;
+    if (ttlSeconds) {
+      return redisClient.setex(key, ttlSeconds, value);
+    }
+    return redisClient.set(key, value);
+  },
+  zadd: async (key: string, score: number, member: string): Promise<number> => {
+    if (!redisClient) return 0;
+    return redisClient.zadd(key, score, member);
+  },
+  zremrangebyscore: async (key: string, min: number, max: number): Promise<number> => {
+    if (!redisClient) return 0;
+    return redisClient.zremrangebyscore(key, min, max);
+  },
+  zcount: async (key: string, min: number | string, max: number | string): Promise<number> => {
+    if (!redisClient) return 0;
+    return redisClient.zcount(key, min, max);
+  },
+  expire: async (key: string, seconds: number): Promise<number> => {
+    if (!redisClient) return 0;
+    return redisClient.expire(key, seconds);
+  },
+};
+
+/**
+ * Cache helper object for convenient access
+ */
+export const cache = {
+  set: setCache,
+  get: getCache,
+  delete: deleteCache,
+  deletePattern: deleteCachePattern,
+  has: hasCache,
+  ttl: getCacheTTL,
+  increment: incrementCache,
+  setExpiry,
+};
+
+/**
+ * Invalidate cache by deleting a key
+ */
+export const invalidateCache = deleteCache;
+
 export default {
   connect: connectRedis,
   disconnect: disconnectRedis,
   getClient: getRedisClient,
   checkHealth: checkRedisHealth,
-  cache: {
-    set: setCache,
-    get: getCache,
-    delete: deleteCache,
-    deletePattern: deleteCachePattern,
-    has: hasCache,
-    ttl: getCacheTTL,
-    increment: incrementCache,
-    setExpiry,
-  },
+  cache,
   rateLimit: {
     getKey: getRateLimitKey,
     check: checkRateLimit,

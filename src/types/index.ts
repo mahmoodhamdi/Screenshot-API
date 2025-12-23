@@ -57,6 +57,11 @@ export interface IUserUsage {
   lastResetDate: Date;
 }
 
+export interface IRefreshToken {
+  token: string;
+  expiresAt: Date;
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   email: string;
@@ -68,7 +73,9 @@ export interface IUser extends Document {
   role: UserRole;
   subscription: IUserSubscription;
   usage: IUserUsage;
-  refreshTokens: string[];
+  refreshTokens: IRefreshToken[];
+  verificationToken?: string;
+  lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;

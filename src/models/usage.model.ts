@@ -82,7 +82,7 @@ const usageSchema = new Schema<IUsage>(
 // Compound index for efficient user + date queries
 usageSchema.index({ user: 1, date: 1 }, { unique: true });
 usageSchema.index({ user: 1, apiKey: 1, date: 1 });
-usageSchema.index({ date: 1 });
+// Note: date field already has index: true in schema definition
 
 // ============================================
 // Virtual Fields

@@ -88,9 +88,21 @@ const userSchema = new Schema<IUser>(
       },
     },
     refreshTokens: {
-      type: [String],
+      type: [
+        {
+          token: { type: String, required: true },
+          expiresAt: { type: Date, required: true },
+        },
+      ],
       default: [],
       select: false,
+    },
+    verificationToken: {
+      type: String,
+      select: false,
+    },
+    lastLoginAt: {
+      type: Date,
     },
   },
   {

@@ -51,8 +51,10 @@ const envSchema = z.object({
   AWS_REGION: z.string().default('us-east-1'),
   AWS_S3_BUCKET: z.string().optional(),
 
-  // Local Storage
+  // Storage
+  STORAGE_TYPE: z.enum(['local', 's3']).default('local'),
   LOCAL_STORAGE_PATH: z.string().default('./uploads'),
+  STORAGE_PUBLIC_URL: z.string().optional(),
   SCREENSHOT_EXPIRY_DAYS: z.string().transform(Number).default('7'),
 
   // Stripe
@@ -230,8 +232,15 @@ export const config = {
   },
 
   storage: {
+    type: env.STORAGE_TYPE as 'local' | 's3',
     localPath: env.LOCAL_STORAGE_PATH,
+    publicUrl: env.STORAGE_PUBLIC_URL,
     expiryDays: env.SCREENSHOT_EXPIRY_DAYS,
+    s3Bucket: env.AWS_S3_BUCKET,
+    s3Region: env.AWS_REGION,
+    s3AccessKey: env.AWS_ACCESS_KEY_ID,
+    s3SecretKey: env.AWS_SECRET_ACCESS_KEY,
+    s3SignedUrls: env.STORAGE_TYPE === 's3',
   },
 
   stripe: {

@@ -1,0 +1,44 @@
+/**
+ * Routes Index
+ * Configures and exports all API routes
+ */
+
+import { Router, Request, Response } from 'express';
+import screenshotRoutes from './screenshot.routes';
+
+const router = Router();
+
+// ============================================
+// API Routes
+// ============================================
+
+// Screenshot routes
+router.use('/screenshots', screenshotRoutes);
+
+// Health check
+router.get('/health', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// API info
+router.get('/', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    name: 'Screenshot API',
+    version: 'v1',
+    documentation: '/docs',
+    endpoints: {
+      screenshots: '/api/v1/screenshots',
+      auth: '/api/v1/auth',
+      users: '/api/v1/users',
+      subscriptions: '/api/v1/subscriptions',
+      analytics: '/api/v1/analytics',
+    },
+  });
+});
+
+export default router;

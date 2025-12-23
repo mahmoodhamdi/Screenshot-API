@@ -195,6 +195,20 @@ export const config = {
   apiVersion: env.API_VERSION,
   apiUrl: env.API_URL,
 
+  // Server configuration
+  server: {
+    env: env.NODE_ENV,
+    port: env.PORT,
+    trustProxy: true,
+    shutdownTimeout: 30000,
+  },
+
+  // API configuration
+  api: {
+    version: env.API_VERSION,
+    url: env.API_URL,
+  },
+
   mongo: {
     uri: env.MONGODB_URI,
   },

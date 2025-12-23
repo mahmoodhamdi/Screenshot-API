@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import authRoutes from './auth.routes';
 import screenshotRoutes from './screenshot.routes';
 import subscriptionRoutes from './subscription.routes';
 import analyticsRoutes from './analytics.routes';
@@ -13,6 +14,9 @@ const router = Router();
 // ============================================
 // API Routes
 // ============================================
+
+// Auth routes
+router.use('/auth', authRoutes);
 
 // Screenshot routes
 router.use('/screenshots', screenshotRoutes);

@@ -360,6 +360,9 @@ export const userAgents = {
     'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1',
 } as const;
 
+// Alias for graceful shutdown
+export const closeBrowserPool = closeAllBrowsers;
+
 export default {
   createBrowser,
   getBrowser,
@@ -367,6 +370,7 @@ export default {
   createPage,
   closePage,
   closeAllBrowsers,
+  closeBrowserPool,
   getPoolStatus,
   emulateDarkMode,
   viewportPresets,

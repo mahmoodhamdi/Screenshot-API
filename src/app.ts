@@ -1,23 +1,154 @@
 /**
  * Express Application Setup
- * This file will be fully implemented in Phase 8.
- * For now, it exports a minimal Express app to verify the build works.
+ * Main application configuration with all middleware and routes
  */
 
-import express, { Application, Request, Response } from 'express';
+import express, { Application, Request, Response, NextFunction } from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import compression from 'compression';
+import morgan from 'morgan';
+import { v4 as uuidv4 } from 'uuid';
+
+import config from '@config/index';
+import routes from '@routes/index';
+import { errorHandler, notFoundHandler } from '@middlewares/error.middleware';
+import logger from '@utils/logger';
+
+// ============================================
+// Create Express App
+// ============================================
 
 const app: Application = express();
 
-// Basic middleware
-app.use(express.json());
+// ============================================
+// Security Middleware
+// ============================================
 
-// Health check endpoint
+// Helmet for security headers
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+// CORS configuration
+app.use(
+  cors({
+    origin: config.cors.origin,
+    credentials: config.cors.credentials,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Request-ID'],
+    exposedHeaders: ['X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+    maxAge: 86400, // 24 hours
+  })
+);
+
+// ============================================
+// Request Processing Middleware
+// ============================================
+
+// Request ID for tracing
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const requestId = (req.headers['x-request-id'] as string) || uuidv4();
+  req.requestId = requestId;
+  res.setHeader('X-Request-ID', requestId);
+  next();
+});
+
+// Compression
+app.use(compression());
+
+// Body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Trust proxy for accurate IP detection behind load balancers
+app.set('trust proxy', config.server.trustProxy);
+
+// ============================================
+// Logging Middleware
+// ============================================
+
+// Morgan HTTP request logging
+if (config.server.env !== 'test') {
+  app.use(
+    morgan(
+      config.server.env === 'development' ? 'dev' : 'combined',
+      {
+        stream: {
+          write: (message: string) => {
+            logger.http(message.trim());
+          },
+        },
+        skip: (req: Request) => {
+          // Skip health check logging to reduce noise
+          return req.path === '/health' || req.path === '/api/v1/health';
+        },
+      }
+    )
+  );
+}
+
+// ============================================
+// API Routes
+// ============================================
+
+// API version prefix
+app.use(`/api/${config.api.version}`, routes);
+
+// Root health check
 app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({
+  res.json({
     success: true,
-    message: 'Screenshot API is running',
+    status: 'healthy',
+    service: 'screenshot-api',
+    version: config.api.version,
     timestamp: new Date().toISOString(),
   });
 });
+
+// Root endpoint
+app.get('/', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    message: 'Screenshot API',
+    version: config.api.version,
+    documentation: '/docs',
+    health: '/health',
+    api: `/api/${config.api.version}`,
+  });
+});
+
+// ============================================
+// Error Handling
+// ============================================
+
+// 404 handler for unmatched routes
+app.use(notFoundHandler);
+
+// Global error handler
+app.use(errorHandler);
+
+// ============================================
+// Extend Express Types
+// ============================================
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      requestId?: string;
+    }
+  }
+}
 
 export default app;

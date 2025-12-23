@@ -104,6 +104,8 @@ export interface IApiKey extends Document {
   usageCount: number;
   createdAt: Date;
   updatedAt: Date;
+  // Virtual field
+  maskedKey?: string;
 }
 
 // ============================================

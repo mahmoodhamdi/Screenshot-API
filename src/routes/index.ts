@@ -5,6 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import screenshotRoutes from './screenshot.routes';
+import subscriptionRoutes from './subscription.routes';
 
 const router = Router();
 
@@ -14,6 +15,9 @@ const router = Router();
 
 // Screenshot routes
 router.use('/screenshots', screenshotRoutes);
+
+// Subscription routes
+router.use('/subscriptions', subscriptionRoutes);
 
 // Health check
 router.get('/health', (_req: Request, res: Response) => {

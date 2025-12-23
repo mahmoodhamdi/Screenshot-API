@@ -319,9 +319,7 @@ async function isRefreshTokenValid(userId: Types.ObjectId, refreshToken: string)
   const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
   const now = new Date();
 
-  return user.refreshTokens.some(
-    (rt) => rt.token === tokenHash && rt.expiresAt > now
-  );
+  return user.refreshTokens.some((rt) => rt.token === tokenHash && rt.expiresAt > now);
 }
 
 /**

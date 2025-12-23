@@ -6,11 +6,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Types } from 'mongoose';
 import { IUser, IApiKey, UserRole } from '@/types';
-import {
-  verifyAccessToken,
-  authenticateApiKey,
-  TokenPayload,
-} from '@services/auth.service';
+import { verifyAccessToken, authenticateApiKey, TokenPayload } from '@services/auth.service';
 import User from '@models/user.model';
 import { cache } from '@config/redis';
 import logger from '@utils/logger';
@@ -90,11 +86,7 @@ async function getUser(userId: string): Promise<IUser | null> {
  * Authenticate user with JWT token
  * Requires valid Bearer token in Authorization header
  */
-export function authenticateJWT(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function authenticateJWT(req: Request, res: Response, next: NextFunction): void {
   const token = extractBearerToken(req.headers.authorization);
 
   if (!token) {
@@ -236,11 +228,7 @@ export function authenticateApiKeyMiddleware(
  * Authenticate with either JWT or API key
  * Tries JWT first, then API key
  */
-export function authenticateAny(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function authenticateAny(req: Request, res: Response, next: NextFunction): void {
   const token = extractBearerToken(req.headers.authorization);
   const apiKeyHeader = req.headers['x-api-key'] as string | undefined;
   const apiKey = extractApiKey(apiKeyHeader);
@@ -271,11 +259,7 @@ export function authenticateAny(
  * Optional authentication - doesn't fail if no auth provided
  * Useful for endpoints that behave differently for authenticated users
  */
-export function optionalAuth(
-  req: Request,
-  _res: Response,
-  next: NextFunction
-): void {
+export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
   const token = extractBearerToken(req.headers.authorization);
   const apiKeyHeader = req.headers['x-api-key'] as string | undefined;
   const apiKey = extractApiKey(apiKeyHeader);
@@ -370,11 +354,7 @@ export const requireAdmin = requireRole('admin');
 /**
  * Require verified email
  */
-export function requireVerified(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function requireVerified(req: Request, res: Response, next: NextFunction): void {
   if (!req.user) {
     res.status(401).json({
       success: false,

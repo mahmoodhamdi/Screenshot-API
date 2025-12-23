@@ -24,12 +24,7 @@ const router = Router();
  * @desc    Get screenshot statistics
  * @access  Private
  */
-router.get(
-  '/stats',
-  authenticateAny,
-  validators.dateRange,
-  screenshotController.stats
-);
+router.get('/stats', authenticateAny, validators.dateRange, screenshotController.stats);
 
 /**
  * @route   POST /api/v1/screenshots
@@ -51,36 +46,21 @@ router.post(
  * @desc    List user's screenshots
  * @access  Private
  */
-router.get(
-  '/',
-  authenticateAny,
-  validators.listScreenshots,
-  screenshotController.list
-);
+router.get('/', authenticateAny, validators.listScreenshots, screenshotController.list);
 
 /**
  * @route   GET /api/v1/screenshots/:id
  * @desc    Get screenshot by ID
  * @access  Private
  */
-router.get(
-  '/:id',
-  authenticateAny,
-  validators.screenshotId,
-  screenshotController.getById
-);
+router.get('/:id', authenticateAny, validators.screenshotId, screenshotController.getById);
 
 /**
  * @route   DELETE /api/v1/screenshots/:id
  * @desc    Delete a screenshot
  * @access  Private
  */
-router.delete(
-  '/:id',
-  authenticateAny,
-  validators.screenshotId,
-  screenshotController.remove
-);
+router.delete('/:id', authenticateAny, validators.screenshotId, screenshotController.remove);
 
 /**
  * @route   POST /api/v1/screenshots/:id/refresh-url

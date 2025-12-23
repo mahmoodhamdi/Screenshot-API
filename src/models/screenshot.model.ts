@@ -339,14 +339,17 @@ screenshotSchema.methods.recordWebhookAttempt = async function (
 // ============================================
 
 interface ScreenshotModel extends Model<IScreenshot> {
-  findByUser(userId: Types.ObjectId, options?: {
-    status?: ScreenshotStatus;
-    format?: ScreenshotFormat;
-    limit?: number;
-    skip?: number;
-    fromDate?: Date;
-    toDate?: Date;
-  }): Promise<IScreenshot[]>;
+  findByUser(
+    userId: Types.ObjectId,
+    options?: {
+      status?: ScreenshotStatus;
+      format?: ScreenshotFormat;
+      limit?: number;
+      skip?: number;
+      fromDate?: Date;
+      toDate?: Date;
+    }
+  ): Promise<IScreenshot[]>;
   countByUser(userId: Types.ObjectId, status?: ScreenshotStatus): Promise<number>;
   findPending(limit?: number): Promise<IScreenshot[]>;
   findByIdAndUser(id: Types.ObjectId, userId: Types.ObjectId): Promise<IScreenshot | null>;

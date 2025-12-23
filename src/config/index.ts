@@ -41,7 +41,10 @@ const envSchema = z.object({
   API_KEY_LENGTH: z.string().transform(Number).default('32'),
 
   // Puppeteer
-  PUPPETEER_HEADLESS: z.string().transform((val) => val === 'true').default('true'),
+  PUPPETEER_HEADLESS: z
+    .string()
+    .transform((val) => val === 'true')
+    .default('true'),
   PUPPETEER_TIMEOUT: z.string().transform(Number).default('30000'),
   PUPPETEER_MAX_CONCURRENT: z.string().transform(Number).default('5'),
 
@@ -81,7 +84,10 @@ const envSchema = z.object({
 
   // CORS
   CORS_ORIGIN: z.string().default('*'),
-  CORS_CREDENTIALS: z.string().transform((val) => val === 'true').default('true'),
+  CORS_CREDENTIALS: z
+    .string()
+    .transform((val) => val === 'true')
+    .default('true'),
 });
 
 /**
@@ -246,7 +252,7 @@ export const config = {
   },
 
   storage: {
-    type: env.STORAGE_TYPE as 'local' | 's3',
+    type: env.STORAGE_TYPE,
     localPath: env.LOCAL_STORAGE_PATH,
     publicUrl: env.STORAGE_PUBLIC_URL,
     expiryDays: env.SCREENSHOT_EXPIRY_DAYS,

@@ -130,7 +130,11 @@ export const httpLogStream = {
  * @param error - Error object
  * @param metadata - Additional metadata
  */
-export const logError = (message: string, error?: Error | unknown, metadata?: Record<string, unknown>): void => {
+export const logError = (
+  message: string,
+  error?: Error | unknown,
+  metadata?: Record<string, unknown>
+): void => {
   if (error instanceof Error) {
     logger.error(message, {
       error: {
@@ -209,7 +213,11 @@ export const createChildLogger = (metadata: Record<string, unknown>): winston.Lo
  * @param durationMs - Duration in milliseconds
  * @param metadata - Additional metadata
  */
-export const logPerformance = (operation: string, durationMs: number, metadata?: Record<string, unknown>): void => {
+export const logPerformance = (
+  operation: string,
+  durationMs: number,
+  metadata?: Record<string, unknown>
+): void => {
   const level = durationMs > 5000 ? 'warn' : 'debug';
   logger.log(level, `Performance: ${operation} took ${durationMs}ms`, {
     operation,
@@ -224,7 +232,11 @@ export const logPerformance = (operation: string, durationMs: number, metadata?:
  * @param action - Action performed
  * @param metadata - Additional metadata
  */
-export const logApiKeyUsage = (apiKeyId: string, action: string, metadata?: Record<string, unknown>): void => {
+export const logApiKeyUsage = (
+  apiKeyId: string,
+  action: string,
+  metadata?: Record<string, unknown>
+): void => {
   logger.info(`API Key ${apiKeyId}: ${action}`, {
     apiKeyId,
     action,

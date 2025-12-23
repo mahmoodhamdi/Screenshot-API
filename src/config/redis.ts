@@ -147,7 +147,11 @@ const DEFAULT_TTL = 3600;
  * @param value - Value to cache (will be JSON serialized)
  * @param ttl - Time to live in seconds (default: 1 hour)
  */
-export const setCache = async <T>(key: string, value: T, ttl: number = DEFAULT_TTL): Promise<void> => {
+export const setCache = async <T>(
+  key: string,
+  value: T,
+  ttl: number = DEFAULT_TTL
+): Promise<void> => {
   if (!redisClient) {
     logger.warn('Redis not connected, cache set skipped');
     return;

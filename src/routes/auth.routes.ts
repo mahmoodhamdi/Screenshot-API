@@ -85,12 +85,7 @@ router.get('/me', authenticateAny, defaultRateLimit, authController.me);
  * @desc    Change password
  * @access  Private
  */
-router.post(
-  '/change-password',
-  authenticateJWT,
-  strictRateLimit,
-  authController.changePassword
-);
+router.post('/change-password', authenticateJWT, strictRateLimit, authController.changePassword);
 
 // ============================================
 // API Key Management Routes

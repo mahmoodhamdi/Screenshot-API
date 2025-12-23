@@ -77,7 +77,7 @@ const apiKeySchema = new Schema<IApiKey>(
       virtuals: true,
       transform: (_doc, ret: Record<string, unknown>) => {
         // Never expose the actual key in JSON responses
-        const { key, keyHash, __v, ...rest } = ret;
+        const { key: _key, keyHash: _keyHash, __v: _v, ...rest } = ret;
         return rest;
       },
     },
@@ -176,7 +176,10 @@ apiKeySchema.methods.isDomainAllowed = function (domain: string): boolean {
   // If no whitelist, allow all
   if (!this.domainWhitelist || this.domainWhitelist.length === 0) return true;
 
-  const normalizedDomain = domain.toLowerCase().replace(/^https?:\/\//, '').split('/')[0];
+  const normalizedDomain = domain
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .split('/')[0];
 
   return this.domainWhitelist.some((allowed: string) => {
     const normalizedAllowed = allowed.toLowerCase();
@@ -184,9 +187,7 @@ apiKeySchema.methods.isDomainAllowed = function (domain: string): boolean {
     // Check for wildcard subdomain match
     if (normalizedAllowed.startsWith('*.')) {
       const baseDomain = normalizedAllowed.substring(2);
-      return (
-        normalizedDomain === baseDomain || normalizedDomain.endsWith(`.${baseDomain}`)
-      );
+      return normalizedDomain === baseDomain || normalizedDomain.endsWith(`.${baseDomain}`);
     }
 
     return normalizedDomain === normalizedAllowed;

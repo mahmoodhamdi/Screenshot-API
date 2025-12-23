@@ -170,10 +170,7 @@ export async function getOverview(user: IUser): Promise<OverviewStats> {
   const planLimits = user.getPlanLimits();
   const usagePercentage =
     planLimits.screenshotsPerMonth > 0
-      ? Math.round(
-          (user.usage.screenshotsThisMonth / planLimits.screenshotsPerMonth) *
-            100
-        )
+      ? Math.round((user.usage.screenshotsThisMonth / planLimits.screenshotsPerMonth) * 100)
       : 0;
 
   return {
@@ -182,9 +179,7 @@ export async function getOverview(user: IUser): Promise<OverviewStats> {
     failedScreenshots: stats.failed,
     successRate: stats.total > 0 ? Math.round((stats.successful / stats.total) * 100) : 100,
     averageResponseTime:
-      stats.successful > 0
-        ? Math.round(stats.totalDuration / stats.successful)
-        : 0,
+      stats.successful > 0 ? Math.round(stats.totalDuration / stats.successful) : 0,
     totalBandwidth: stats.totalSize,
     screenshotsToday: todayCount,
     screenshotsThisWeek: weekCount,
@@ -215,64 +210,63 @@ export async function getScreenshotStats(
     };
   }
 
-  const [statusStats, formatStats, resolutionStats, generalStats] =
-    await Promise.all([
-      // By status
-      Screenshot.aggregate([
-        { $match: matchStage },
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 },
-          },
+  const [statusStats, formatStats, resolutionStats, generalStats] = await Promise.all([
+    // By status
+    Screenshot.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
         },
-      ]),
+      },
+    ]),
 
-      // By format
-      Screenshot.aggregate([
-        { $match: matchStage },
-        {
-          $group: {
-            _id: '$options.format',
-            count: { $sum: 1 },
-          },
+    // By format
+    Screenshot.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: '$options.format',
+          count: { $sum: 1 },
         },
-      ]),
+      },
+    ]),
 
-      // By resolution (top 5)
-      Screenshot.aggregate([
-        { $match: matchStage },
-        {
-          $group: {
-            _id: {
-              width: '$options.width',
-              height: '$options.height',
-            },
-            count: { $sum: 1 },
+    // By resolution (top 5)
+    Screenshot.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: {
+            width: '$options.width',
+            height: '$options.height',
           },
+          count: { $sum: 1 },
         },
-        { $sort: { count: -1 } },
-        { $limit: 5 },
-      ]),
+      },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
+    ]),
 
-      // General stats
-      Screenshot.aggregate([
-        { $match: { ...matchStage, status: 'completed' } },
-        {
-          $group: {
-            _id: null,
-            avgDuration: { $avg: '$result.duration' },
-            avgSize: { $avg: '$result.size' },
-            fullPage: {
-              $sum: { $cond: [{ $eq: ['$options.fullPage', true] }, 1, 0] },
-            },
-            regular: {
-              $sum: { $cond: [{ $ne: ['$options.fullPage', true] }, 1, 0] },
-            },
+    // General stats
+    Screenshot.aggregate([
+      { $match: { ...matchStage, status: 'completed' } },
+      {
+        $group: {
+          _id: null,
+          avgDuration: { $avg: '$result.duration' },
+          avgSize: { $avg: '$result.size' },
+          fullPage: {
+            $sum: { $cond: [{ $eq: ['$options.fullPage', true] }, 1, 0] },
+          },
+          regular: {
+            $sum: { $cond: [{ $ne: ['$options.fullPage', true] }, 1, 0] },
           },
         },
-      ]),
-    ]);
+      },
+    ]),
+  ]);
 
   // Convert arrays to objects
   const byStatus = statusStats.reduce(
@@ -280,10 +274,7 @@ export async function getScreenshotStats(
       acc[item._id as ScreenshotStatus] = item.count;
       return acc;
     },
-    { pending: 0, processing: 0, completed: 0, failed: 0 } as Record<
-      ScreenshotStatus,
-      number
-    >
+    { pending: 0, processing: 0, completed: 0, failed: 0 } as Record<ScreenshotStatus, number>
   );
 
   const byFormat = formatStats.reduce(
@@ -455,9 +446,7 @@ export async function getErrorBreakdown(
   const [totalCount, failedCount] = await Promise.all([
     Screenshot.countDocuments({
       user: userId,
-      ...(dateRange
-        ? { createdAt: { $gte: dateRange.startDate, $lte: dateRange.endDate } }
-        : {}),
+      ...(dateRange ? { createdAt: { $gte: dateRange.startDate, $lte: dateRange.endDate } } : {}),
     }),
     Screenshot.countDocuments(matchStage),
   ]);
@@ -467,9 +456,7 @@ export async function getErrorBreakdown(
     {
       $match: {
         user: new Types.ObjectId(userId),
-        ...(dateRange
-          ? { date: { $gte: dateRange.startDate, $lte: dateRange.endDate } }
-          : {}),
+        ...(dateRange ? { date: { $gte: dateRange.startDate, $lte: dateRange.endDate } } : {}),
       },
     },
     { $unwind: { path: '$errorBreakdown', preserveNullAndEmptyArrays: false } },
@@ -498,10 +485,7 @@ export async function getErrorBreakdown(
   ]);
 
   // Merge and deduplicate errors
-  const errorMap = new Map<
-    string,
-    { count: number; lastOccurred: Date }
-  >();
+  const errorMap = new Map<string, { count: number; lastOccurred: Date }>();
 
   for (const item of usageErrors) {
     if (item._id) {
@@ -530,8 +514,7 @@ export async function getErrorBreakdown(
   }
 
   const byType: Record<string, number> = {};
-  const topErrors: Array<{ error: string; count: number; lastOccurred: Date }> =
-    [];
+  const topErrors: Array<{ error: string; count: number; lastOccurred: Date }> = [];
 
   // Categorize errors
   for (const [error, data] of errorMap) {
@@ -546,22 +529,13 @@ export async function getErrorBreakdown(
     const errorLower = error.toLowerCase();
     if (errorLower.includes('timeout')) {
       type = 'timeout';
-    } else if (
-      errorLower.includes('network') ||
-      errorLower.includes('connection')
-    ) {
+    } else if (errorLower.includes('network') || errorLower.includes('connection')) {
       type = 'network';
-    } else if (
-      errorLower.includes('navigation') ||
-      errorLower.includes('navigate')
-    ) {
+    } else if (errorLower.includes('navigation') || errorLower.includes('navigate')) {
       type = 'navigation';
     } else if (errorLower.includes('invalid') || errorLower.includes('url')) {
       type = 'invalid_url';
-    } else if (
-      errorLower.includes('blocked') ||
-      errorLower.includes('denied')
-    ) {
+    } else if (errorLower.includes('blocked') || errorLower.includes('denied')) {
       type = 'blocked';
     }
 
@@ -687,10 +661,7 @@ export async function getApiKeyStats(
       },
       { $sort: { _id: 1 } },
     ]),
-    Screenshot.findOne({ apiKey: keyId })
-      .sort({ createdAt: -1 })
-      .select('createdAt')
-      .lean(),
+    Screenshot.findOne({ apiKey: keyId }).sort({ createdAt: -1 }).select('createdAt').lean(),
   ]);
 
   const totals = stats[0] || { total: 0, successful: 0, failed: 0 };
@@ -747,10 +718,7 @@ export async function recordUsage(
     const errorLower = error.toLowerCase();
     if (errorLower.includes('timeout')) {
       errorType = 'timeout';
-    } else if (
-      errorLower.includes('network') ||
-      errorLower.includes('connection')
-    ) {
+    } else if (errorLower.includes('network') || errorLower.includes('connection')) {
       errorType = 'network';
     } else if (errorLower.includes('navigation')) {
       errorType = 'navigation';
@@ -793,7 +761,12 @@ export async function recordUsage(
                   $divide: [
                     {
                       $add: [
-                        { $multiply: ['$responseTime.avg', { $subtract: ['$screenshots.successful', 1] }] },
+                        {
+                          $multiply: [
+                            '$responseTime.avg',
+                            { $subtract: ['$screenshots.successful', 1] },
+                          ],
+                        },
                         duration,
                       ],
                     },

@@ -244,7 +244,7 @@ async function captureScreenshot(
     height = 842;
   } else {
     // Image screenshot
-    buffer = (await page.screenshot(puppeteerOptions)) as Buffer;
+    buffer = await page.screenshot(puppeteerOptions);
 
     // Get actual dimensions
     if (options.fullPage) {
@@ -449,7 +449,16 @@ export async function listScreenshots(
     endDate?: Date;
   }
 ): Promise<ListScreenshotsResult> {
-  const { page = 1, limit = 20, sort = 'createdAt', order = 'desc', status, format, startDate, endDate } = options;
+  const {
+    page = 1,
+    limit = 20,
+    sort = 'createdAt',
+    order = 'desc',
+    status,
+    format,
+    startDate,
+    endDate,
+  } = options;
 
   // Build query
   const query: Record<string, unknown> = { user: userId };
@@ -699,11 +708,7 @@ export async function getScreenshotStats(
         },
         pending: {
           $sum: {
-            $cond: [
-              { $in: ['$result.status', ['pending', 'processing']] },
-              1,
-              0,
-            ],
+            $cond: [{ $in: ['$result.status', ['pending', 'processing']] }, 1, 0],
           },
         },
         totalSize: { $sum: { $ifNull: ['$result.size', 0] } },

@@ -96,7 +96,9 @@ export const blockedDomains: string[] = [
  * @param options - Additional launch options
  * @returns Browser instance
  */
-export const createBrowser = async (options?: Partial<PuppeteerLaunchOptions>): Promise<Browser> => {
+export const createBrowser = async (
+  options?: Partial<PuppeteerLaunchOptions>
+): Promise<Browser> => {
   try {
     const launchOptions = { ...defaultLaunchOptions, ...options };
     const browser = await puppeteer.launch(launchOptions);

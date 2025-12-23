@@ -170,7 +170,11 @@ const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
   const success = await authService.verifyEmail(token);
 
   if (!success) {
-    throw new AppError('Invalid or expired verification token', 400, ERROR_CODES.AUTH_TOKEN_INVALID);
+    throw new AppError(
+      'Invalid or expired verification token',
+      400,
+      ERROR_CODES.AUTH_TOKEN_INVALID
+    );
   }
 
   res.json({

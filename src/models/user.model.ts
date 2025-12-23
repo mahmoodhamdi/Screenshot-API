@@ -110,7 +110,7 @@ const userSchema = new Schema<IUser>(
     toJSON: {
       virtuals: true,
       transform: (_doc, ret: Record<string, unknown>) => {
-        const { password, refreshTokens, __v, ...rest } = ret;
+        const { password: _password, refreshTokens: _refreshTokens, __v: _v, ...rest } = ret;
         return rest;
       },
     },
@@ -187,10 +187,7 @@ userSchema.methods.incrementUsage = async function (): Promise<void> {
   const now = new Date();
   const lastReset = this.usage.lastResetDate;
 
-  if (
-    lastReset.getMonth() !== now.getMonth() ||
-    lastReset.getFullYear() !== now.getFullYear()
-  ) {
+  if (lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear()) {
     this.usage.screenshotsThisMonth = 1;
     this.usage.lastResetDate = new Date(now.getFullYear(), now.getMonth(), 1);
   } else {

@@ -179,9 +179,7 @@ function handleMongoError(error: MongoError): ErrorResponse {
 /**
  * Handle Mongoose validation errors
  */
-function handleMongooseValidationError(
-  error: mongoose.Error.ValidationError
-): ErrorResponse {
+function handleMongooseValidationError(error: mongoose.Error.ValidationError): ErrorResponse {
   const errors: Record<string, string> = {};
   for (const field in error.errors) {
     errors[field] = error.errors[field].message;
@@ -232,12 +230,7 @@ function handleAppError(error: AppError): ErrorResponse {
 /**
  * Main error handling middleware
  */
-export function errorHandler(
-  error: Error,
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): void {
+export function errorHandler(error: Error, req: Request, res: Response, _next: NextFunction): void {
   let statusCode = 500;
   let response: ErrorResponse;
 
@@ -285,9 +278,7 @@ export function errorHandler(
       error: {
         code: ERROR_CODES.INTERNAL_ERROR,
         message:
-          process.env.NODE_ENV === 'production'
-            ? ERROR_MESSAGES.INTERNAL_ERROR
-            : error.message,
+          process.env.NODE_ENV === 'production' ? ERROR_MESSAGES.INTERNAL_ERROR : error.message,
       },
     };
   }
@@ -310,11 +301,7 @@ export function errorHandler(
 /**
  * Handle 404 not found
  */
-export function notFoundHandler(
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): void {
+export function notFoundHandler(req: Request, res: Response, _next: NextFunction): void {
   res.status(404).json({
     success: false,
     error: {

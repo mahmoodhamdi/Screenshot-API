@@ -309,15 +309,7 @@ export function isSafeUrl(url: string): boolean {
 
     // Block internal addresses
     const hostname = parsed.hostname.toLowerCase();
-    const blockedHosts = [
-      'localhost',
-      '127.0.0.1',
-      '0.0.0.0',
-      '::1',
-      '[::1]',
-      'internal',
-      'local',
-    ];
+    const blockedHosts = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]', 'internal', 'local'];
 
     if (blockedHosts.includes(hostname)) {
       return false;

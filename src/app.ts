@@ -49,7 +49,12 @@ app.use(
     credentials: config.cors.credentials,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Request-ID'],
-    exposedHeaders: ['X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+    exposedHeaders: [
+      'X-Request-ID',
+      'X-RateLimit-Limit',
+      'X-RateLimit-Remaining',
+      'X-RateLimit-Reset',
+    ],
     maxAge: 86400, // 24 hours
   })
 );
@@ -83,20 +88,17 @@ app.set('trust proxy', config.server.trustProxy);
 // Morgan HTTP request logging
 if (config.server.env !== 'test') {
   app.use(
-    morgan(
-      config.server.env === 'development' ? 'dev' : 'combined',
-      {
-        stream: {
-          write: (message: string) => {
-            logger.http(message.trim());
-          },
+    morgan(config.server.env === 'development' ? 'dev' : 'combined', {
+      stream: {
+        write: (message: string) => {
+          logger.http(message.trim());
         },
-        skip: (req: Request) => {
-          // Skip health check logging to reduce noise
-          return req.path === '/health' || req.path === '/api/v1/health';
-        },
-      }
-    )
+      },
+      skip: (req: Request) => {
+        // Skip health check logging to reduce noise
+        return req.path === '/health' || req.path === '/api/v1/health';
+      },
+    })
   );
 }
 

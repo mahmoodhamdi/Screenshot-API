@@ -142,10 +142,7 @@ export async function getOrCreateCustomer(user: IUser): Promise<string> {
 /**
  * Update customer email in Stripe
  */
-export async function updateCustomerEmail(
-  customerId: string,
-  email: string
-): Promise<void> {
+export async function updateCustomerEmail(customerId: string, email: string): Promise<void> {
   const stripe = getStripe();
 
   await stripe.customers.update(customerId, { email });
@@ -227,11 +224,7 @@ export async function createPortalSession(
 
   // User must have a customer ID
   if (!user.subscription.stripeCustomerId) {
-    throw new AppError(
-      'No subscription found',
-      400,
-      ERROR_CODES.VALIDATION_ERROR
-    );
+    throw new AppError('No subscription found', 400, ERROR_CODES.VALIDATION_ERROR);
   }
 
   const session = await stripe.billingPortal.sessions.create({
@@ -256,9 +249,7 @@ export async function createPortalSession(
 /**
  * Get subscription details for user
  */
-export async function getSubscriptionDetails(
-  user: IUser
-): Promise<SubscriptionDetails | null> {
+export async function getSubscriptionDetails(user: IUser): Promise<SubscriptionDetails | null> {
   if (!user.subscription.stripeSubscriptionId) {
     return null;
   }
@@ -312,16 +303,9 @@ export async function getSubscriptionDetails(
 /**
  * Cancel subscription
  */
-export async function cancelSubscription(
-  user: IUser,
-  immediately = false
-): Promise<void> {
+export async function cancelSubscription(user: IUser, immediately = false): Promise<void> {
   if (!user.subscription.stripeSubscriptionId) {
-    throw new AppError(
-      'No subscription to cancel',
-      400,
-      ERROR_CODES.VALIDATION_ERROR
-    );
+    throw new AppError('No subscription to cancel', 400, ERROR_CODES.VALIDATION_ERROR);
   }
 
   const stripe = getStripe();
@@ -356,19 +340,13 @@ export async function cancelSubscription(
  */
 export async function resumeSubscription(user: IUser): Promise<void> {
   if (!user.subscription.stripeSubscriptionId) {
-    throw new AppError(
-      'No subscription to resume',
-      400,
-      ERROR_CODES.VALIDATION_ERROR
-    );
+    throw new AppError('No subscription to resume', 400, ERROR_CODES.VALIDATION_ERROR);
   }
 
   const stripe = getStripe();
 
   // Get current subscription
-  const subscription = await stripe.subscriptions.retrieve(
-    user.subscription.stripeSubscriptionId
-  );
+  const subscription = await stripe.subscriptions.retrieve(user.subscription.stripeSubscriptionId);
 
   if (!subscription.cancel_at_period_end) {
     throw new AppError(
@@ -395,16 +373,9 @@ export async function resumeSubscription(user: IUser): Promise<void> {
 /**
  * Change subscription plan
  */
-export async function changePlan(
-  user: IUser,
-  newPlan: Exclude<PlanType, 'free'>
-): Promise<void> {
+export async function changePlan(user: IUser, newPlan: Exclude<PlanType, 'free'>): Promise<void> {
   if (!user.subscription.stripeSubscriptionId) {
-    throw new AppError(
-      'No active subscription to change',
-      400,
-      ERROR_CODES.VALIDATION_ERROR
-    );
+    throw new AppError('No active subscription to change', 400, ERROR_CODES.VALIDATION_ERROR);
   }
 
   const stripe = getStripe();
@@ -420,9 +391,7 @@ export async function changePlan(
   }
 
   // Get current subscription
-  const subscription = await stripe.subscriptions.retrieve(
-    user.subscription.stripeSubscriptionId
-  );
+  const subscription = await stripe.subscriptions.retrieve(user.subscription.stripeSubscriptionId);
 
   // Update subscription with new plan
   await stripe.subscriptions.update(user.subscription.stripeSubscriptionId, {
@@ -472,11 +441,7 @@ export async function handleWebhookEvent(
   }
 
   try {
-    event = stripe.webhooks.constructEvent(
-      payload,
-      signature,
-      config.stripe.webhookSecret
-    );
+    event = stripe.webhooks.constructEvent(payload, signature, config.stripe.webhookSecret);
   } catch (error) {
     logger.error('Webhook signature verification failed', { error });
     throw new AppError('Invalid webhook signature', 400, ERROR_CODES.VALIDATION_ERROR);
@@ -486,24 +451,24 @@ export async function handleWebhookEvent(
 
   switch (event.type) {
     case 'checkout.session.completed':
-      await handleCheckoutComplete(event.data.object as Stripe.Checkout.Session);
+      await handleCheckoutComplete(event.data.object);
       break;
 
     case 'customer.subscription.created':
     case 'customer.subscription.updated':
-      await handleSubscriptionUpdate(event.data.object as Stripe.Subscription);
+      await handleSubscriptionUpdate(event.data.object);
       break;
 
     case 'customer.subscription.deleted':
-      await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+      await handleSubscriptionDeleted(event.data.object);
       break;
 
     case 'invoice.payment_succeeded':
-      await handlePaymentSucceeded(event.data.object as Stripe.Invoice);
+      await handlePaymentSucceeded(event.data.object);
       break;
 
     case 'invoice.payment_failed':
-      await handlePaymentFailed(event.data.object as Stripe.Invoice);
+      await handlePaymentFailed(event.data.object);
       break;
 
     default:
@@ -709,9 +674,7 @@ export async function getUsageStats(user: IUser): Promise<UsageStatsDTO> {
   const lastReset = new Date(usage.lastResetDate);
   const nextReset = new Date(lastReset);
   nextReset.setMonth(nextReset.getMonth() + 1);
-  const daysUntilReset = Math.ceil(
-    (nextReset.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-  );
+  const daysUntilReset = Math.ceil((nextReset.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
   return {
     currentPlan: user.subscription.plan,
@@ -741,7 +704,8 @@ export function getAvailablePlans(): Array<{
   return Object.entries(PLAN_FEATURES).map(([plan, features]) => ({
     plan: plan as PlanType,
     ...features,
-    priceId: plan !== 'free' ? config.stripe.priceIds[plan as Exclude<PlanType, 'free'>] : undefined,
+    priceId:
+      plan !== 'free' ? config.stripe.priceIds[plan as Exclude<PlanType, 'free'>] : undefined,
   }));
 }
 

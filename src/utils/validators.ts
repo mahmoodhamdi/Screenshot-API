@@ -161,7 +161,9 @@ export const createScreenshotSchema = z.object({
   darkMode: z.boolean().default(false),
   blockAds: z.boolean().default(false),
   blockTrackers: z.boolean().default(false),
-  waitUntil: z.enum(['load', 'domcontentloaded', 'networkidle0', 'networkidle2']).default('networkidle2'),
+  waitUntil: z
+    .enum(['load', 'domcontentloaded', 'networkidle0', 'networkidle2'])
+    .default('networkidle2'),
   webhook: urlSchema.optional(),
 });
 
@@ -216,12 +218,14 @@ export const analyticsQuerySchema = z.object({
 /**
  * Date range schema
  */
-export const dateRangeSchema = z.object({
-  fromDate: z.coerce.date(),
-  toDate: z.coerce.date(),
-}).refine((data) => data.fromDate <= data.toDate, {
-  message: 'fromDate must be before or equal to toDate',
-});
+export const dateRangeSchema = z
+  .object({
+    fromDate: z.coerce.date(),
+    toDate: z.coerce.date(),
+  })
+  .refine((data) => data.fromDate <= data.toDate, {
+    message: 'fromDate must be before or equal to toDate',
+  });
 
 // ============================================
 // User Schemas

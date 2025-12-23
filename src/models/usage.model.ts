@@ -110,15 +110,21 @@ interface UsageModel extends Model<IUsage> {
     duration: number;
     error?: string;
   }): Promise<void>;
-  getByUser(userId: Types.ObjectId, options?: {
-    fromDate?: Date;
-    toDate?: Date;
-    apiKeyId?: Types.ObjectId;
-  }): Promise<IUsage[]>;
-  getOverview(userId: Types.ObjectId, options?: {
-    fromDate?: Date;
-    toDate?: Date;
-  }): Promise<{
+  getByUser(
+    userId: Types.ObjectId,
+    options?: {
+      fromDate?: Date;
+      toDate?: Date;
+      apiKeyId?: Types.ObjectId;
+    }
+  ): Promise<IUsage[]>;
+  getOverview(
+    userId: Types.ObjectId,
+    options?: {
+      fromDate?: Date;
+      toDate?: Date;
+    }
+  ): Promise<{
     totalScreenshots: number;
     successfulScreenshots: number;
     failedScreenshots: number;
@@ -127,17 +133,22 @@ interface UsageModel extends Model<IUsage> {
     avgResponseTime: number;
   }>;
   getByDateRange(userId: Types.ObjectId, fromDate: Date, toDate: Date): Promise<IUsage[]>;
-  aggregateByPeriod(userId: Types.ObjectId, options: {
-    fromDate: Date;
-    toDate: Date;
-    groupBy: 'hour' | 'day' | 'week' | 'month';
-  }): Promise<Array<{
-    date: string;
-    screenshots: number;
-    successful: number;
-    failed: number;
-    avgResponseTime: number;
-  }>>;
+  aggregateByPeriod(
+    userId: Types.ObjectId,
+    options: {
+      fromDate: Date;
+      toDate: Date;
+      groupBy: 'hour' | 'day' | 'week' | 'month';
+    }
+  ): Promise<
+    Array<{
+      date: string;
+      screenshots: number;
+      successful: number;
+      failed: number;
+      avgResponseTime: number;
+    }>
+  >;
 }
 
 /**
@@ -202,7 +213,8 @@ usageSchema.statics.recordScreenshot = async function (options: {
   }
 
   // Update format count
-  usage.screenshots.byFormat[options.format] = (usage.screenshots.byFormat[options.format] || 0) + 1;
+  usage.screenshots.byFormat[options.format] =
+    (usage.screenshots.byFormat[options.format] || 0) + 1;
 
   // Update bandwidth
   usage.bandwidth += options.size;
@@ -323,9 +335,7 @@ usageSchema.statics.getOverview = async function (
 
   const data = result[0];
   const successRate =
-    data.totalScreenshots > 0
-      ? (data.successfulScreenshots / data.totalScreenshots) * 100
-      : 100;
+    data.totalScreenshots > 0 ? (data.successfulScreenshots / data.totalScreenshots) * 100 : 100;
 
   return {
     totalScreenshots: data.totalScreenshots,
@@ -371,13 +381,15 @@ usageSchema.statics.aggregateByPeriod = async function (
     toDate: Date;
     groupBy: 'hour' | 'day' | 'week' | 'month';
   }
-): Promise<Array<{
-  date: string;
-  screenshots: number;
-  successful: number;
-  failed: number;
-  avgResponseTime: number;
-}>> {
+): Promise<
+  Array<{
+    date: string;
+    screenshots: number;
+    successful: number;
+    failed: number;
+    avgResponseTime: number;
+  }>
+> {
   let dateFormat: string;
   switch (options.groupBy) {
     case 'hour':

@@ -60,17 +60,13 @@ const usage = asyncHandler(async (req: Request, res: Response) => {
   const { period = 'day', limit = '30' } = req.query;
 
   const validPeriods = ['day', 'week', 'month'] as const;
-  const usagePeriod = validPeriods.includes(period as typeof validPeriods[number])
+  const usagePeriod = validPeriods.includes(period as (typeof validPeriods)[number])
     ? (period as 'day' | 'week' | 'month')
     : 'day';
 
   const usageLimit = Math.min(Math.max(parseInt(limit as string) || 30, 1), 365);
 
-  const stats = await analyticsService.getUsageOverTime(
-    user,
-    usagePeriod,
-    usageLimit
-  );
+  const stats = await analyticsService.getUsageOverTime(user, usagePeriod, usageLimit);
 
   res.json({
     success: true,

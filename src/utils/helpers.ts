@@ -358,7 +358,9 @@ export const truncate = (str: string, maxLength: number): string => {
  * @param params - Object with parameters
  * @returns Query string
  */
-export const toQueryString = (params: Record<string, string | number | boolean | undefined>): string => {
+export const toQueryString = (
+  params: Record<string, string | number | boolean | undefined>
+): string => {
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined) {
@@ -373,7 +375,9 @@ export const toQueryString = (params: Record<string, string | number | boolean |
  * @param headers - Request headers
  * @returns Client IP or undefined
  */
-export const getClientIp = (headers: Record<string, string | string[] | undefined>): string | undefined => {
+export const getClientIp = (
+  headers: Record<string, string | string[] | undefined>
+): string | undefined => {
   const forwardedFor = headers['x-forwarded-for'];
   if (forwardedFor) {
     const ips = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;

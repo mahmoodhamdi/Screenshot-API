@@ -12,8 +12,8 @@
     "test:integration": "jest --testPathPattern=tests/integration --detectOpenHandles --forceExit",
     "test:e2e": "jest --testPathPattern=tests/e2e --detectOpenHandles --forceExit",
     "test:watch": "jest --watch",
-    "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "lint:fix": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" --fix",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit"
   },

@@ -9,8 +9,10 @@ import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
 import { v4 as uuidv4 } from 'uuid';
+import swaggerUi from 'swagger-ui-express';
 
 import config from '@config/index';
+import swaggerSpec from '@config/swagger';
 import routes from '@routes/index';
 import { errorHandler, notFoundHandler } from '@middlewares/error.middleware';
 import logger from '@utils/logger';
@@ -32,8 +34,8 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'blob:'],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'blob:', 'https://validator.swagger.io'],
       },
     },
     crossOriginEmbedderPolicy: false,
@@ -97,6 +99,32 @@ if (config.server.env !== 'test') {
     )
   );
 }
+
+// ============================================
+// API Documentation
+// ============================================
+
+// Swagger UI - API documentation
+app.use(
+  '/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Screenshot API Documentation',
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      showExtensions: true,
+    },
+  })
+);
+
+// OpenAPI specification JSON
+app.get('/docs/openapi.json', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 // ============================================
 // API Routes

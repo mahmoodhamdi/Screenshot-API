@@ -31,3 +31,4 @@ export {
 // Default exports for route use
 export { default as screenshotController } from './screenshot.controller';
 export { default as subscriptionController } from './subscription.controller';
+export { default as analyticsController } from './analytics.controller';

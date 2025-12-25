@@ -25,6 +25,7 @@ import {
 } from '@utils/docs/collection-generator';
 import { getAllExamples } from '@utils/docs/code-generator';
 import { generateLandingPage } from './views/landing';
+import { generateAuthPage, AuthPageType } from './views/auth';
 
 // ============================================
 // Create Express App
@@ -1378,6 +1379,38 @@ app.get('/', (_req: Request, res: Response) => {
   });
   res.setHeader('Content-Type', 'text/html');
   res.send(landingPage);
+});
+
+// ============================================
+// Authentication Pages
+// ============================================
+
+// Auth page routes
+const authPages: AuthPageType[] = [
+  'login',
+  'register',
+  'forgot-password',
+  'reset-password',
+  'verify-email',
+];
+
+authPages.forEach((page) => {
+  app.get(`/${page}`, (req: Request, res: Response) => {
+    const baseUrl =
+      config.server.env === 'production'
+        ? 'https://api.screenshot.dev'
+        : `http://localhost:${config.server.port}`;
+
+    // Get token from query params for reset-password and verify-email pages
+    const token = req.query.token as string | undefined;
+
+    const authPage = generateAuthPage(page, {
+      baseUrl,
+      token,
+    });
+    res.setHeader('Content-Type', 'text/html');
+    res.send(authPage);
+  });
 });
 
 // ============================================

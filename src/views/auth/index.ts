@@ -7,6 +7,7 @@ import { getAuthLayout } from './components/auth-layout';
 import { getFormInputStyles } from './components/form-input';
 import { getFormButtonStyles } from './components/form-button';
 import { getAuthCardStyles } from './components/auth-card';
+import { generateLoginForm, getLoginStyles, getLoginScripts } from './pages/login';
 
 export type AuthPageType =
   | 'login'
@@ -77,9 +78,10 @@ export function generateAuthPage(page: AuthPageType, config: AuthPageConfig = {}
     ${getFormButtonStyles()}
     ${getAuthCardStyles()}
     ${getAuthAnimationStyles()}
+    ${getPageStyles(page)}
   `;
 
-  const content = getPagePlaceholder(page, pageMeta);
+  const content = getPageContent(page, config);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -177,13 +179,49 @@ export function generateAuthPage(page: AuthPageType, config: AuthPageConfig = {}
     </div>
   </div>
 
-  <script>${getAuthScripts()}</script>
+  <script>${getAuthScripts()}${getPageScripts(page)}</script>
 </body>
 </html>`;
 }
 
 /**
- * Get placeholder content for each page (will be replaced in later phases)
+ * Get page-specific content
+ */
+function getPageContent(page: AuthPageType, config: AuthPageConfig): string {
+  switch (page) {
+    case 'login':
+      return generateLoginForm({ baseUrl: config.baseUrl });
+    default:
+      return getPagePlaceholder(page, PAGE_META[page]);
+  }
+}
+
+/**
+ * Get page-specific styles
+ */
+function getPageStyles(page: AuthPageType): string {
+  switch (page) {
+    case 'login':
+      return getLoginStyles();
+    default:
+      return '';
+  }
+}
+
+/**
+ * Get page-specific scripts
+ */
+function getPageScripts(page: AuthPageType): string {
+  switch (page) {
+    case 'login':
+      return getLoginScripts();
+    default:
+      return '';
+  }
+}
+
+/**
+ * Get placeholder content for pages not yet implemented
  */
 function getPagePlaceholder(page: AuthPageType, meta: PageMeta): string {
   return `

@@ -135,6 +135,7 @@ const refresh = asyncHandler(async (req: Request, res: Response) => {
  * Get current user
  * GET /api/v1/auth/me
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 const me = asyncHandler(async (req: Request, res: Response) => {
   const user = req.user as IUser;
 

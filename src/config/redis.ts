@@ -389,7 +389,7 @@ export const redis = {
    * Get a Redis client for direct operations
    * Returns an object with common Redis methods that work with the internal client
    */
-  multi: () => {
+  multi: (): ReturnType<Redis['multi']> => {
     if (!redisClient) throw new Error('Redis not connected');
     return redisClient.multi();
   },

@@ -665,7 +665,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
 /**
  * Get usage statistics for user
  */
-export async function getUsageStats(user: IUser): Promise<UsageStatsDTO> {
+export function getUsageStats(user: IUser): UsageStatsDTO {
   const planLimits = user.getPlanLimits();
   const usage = user.usage;
 

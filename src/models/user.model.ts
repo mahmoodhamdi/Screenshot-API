@@ -5,7 +5,7 @@
 
 import mongoose, { Schema, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { IUser, PlanType, PlanLimits } from '@/types';
+import { IUser, PlanLimits } from '@/types';
 import { planLimits } from '@config/index';
 
 /**
@@ -84,6 +84,7 @@ const userSchema = new Schema<IUser>(
       },
       lastResetDate: {
         type: Date,
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
         default: () => new Date(new Date().getFullYear(), new Date().getMonth(), 1),
       },
     },
@@ -109,7 +110,7 @@ const userSchema = new Schema<IUser>(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: (_doc, ret: Record<string, unknown>) => {
+      transform: (_doc, ret: Record<string, unknown>): Record<string, unknown> => {
         const { password: _password, refreshTokens: _refreshTokens, __v: _v, ...rest } = ret;
         return rest;
       },
@@ -211,8 +212,8 @@ userSchema.methods.resetMonthlyUsage = async function (): Promise<void> {
  * Get the plan limits for this user's subscription
  * @returns Plan limits configuration
  */
-userSchema.methods.getPlanLimits = function (): PlanLimits {
-  const plan = this.subscription.plan as PlanType;
+userSchema.methods.getPlanLimits = function (this: IUser): PlanLimits {
+  const plan = this.subscription.plan;
   return planLimits[plan];
 };
 

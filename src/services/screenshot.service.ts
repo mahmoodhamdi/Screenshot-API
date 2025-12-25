@@ -132,7 +132,7 @@ export function validateOptionsAgainstPlan(
 /**
  * Check if user has remaining screenshot quota
  */
-export async function checkUsageQuota(user: IUser): Promise<void> {
+export function checkUsageQuota(user: IUser): void {
   const planLimits = user.getPlanLimits();
   const currentUsage = user.usage.screenshotsThisMonth;
 
@@ -279,7 +279,7 @@ export async function createScreenshot(
 
   try {
     // Check usage quota
-    await checkUsageQuota(user);
+    checkUsageQuota(user);
 
     // Merge and validate options
     const options = mergeOptions(dto);

@@ -191,15 +191,18 @@ const screenshotSchema = new Schema<IScreenshot>(
     options: {
       type: screenshotOptionsSchema,
       required: true,
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       default: () => ({}),
     },
     result: {
       type: screenshotResultSchema,
       required: true,
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       default: () => ({ status: 'pending' }),
     },
     metadata: {
       type: screenshotMetadataSchema,
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       default: () => ({}),
     },
     webhook: webhookSchema,
@@ -213,7 +216,7 @@ const screenshotSchema = new Schema<IScreenshot>(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: (_doc, ret: Record<string, unknown>) => {
+      transform: (_doc, ret: Record<string, unknown>): Record<string, unknown> => {
         const { __v, ...rest } = ret;
         // Convert Map to object for headers
         const options = rest.options as Record<string, unknown> | undefined;
@@ -270,7 +273,7 @@ screenshotSchema.virtual('isFailed').get(function () {
 /**
  * Mark the screenshot as processing
  */
-screenshotSchema.methods.markAsProcessing = async function (): Promise<void> {
+screenshotSchema.methods.markAsProcessing = async function (this: IScreenshot): Promise<void> {
   this.result.status = 'processing';
   await this.save();
 };
@@ -279,19 +282,22 @@ screenshotSchema.methods.markAsProcessing = async function (): Promise<void> {
  * Mark the screenshot as completed
  * @param options - Completion options
  */
-screenshotSchema.methods.markAsCompleted = async function (options: {
-  url: string;
-  localPath?: string;
-  size: number;
-  duration: number;
-  metadata?: {
-    pageTitle?: string;
-    pageDescription?: string;
-    faviconUrl?: string;
-    screenshotWidth?: number;
-    screenshotHeight?: number;
-  };
-}): Promise<void> {
+screenshotSchema.methods.markAsCompleted = async function (
+  this: IScreenshot,
+  options: {
+    url: string;
+    localPath?: string;
+    size: number;
+    duration: number;
+    metadata?: {
+      pageTitle?: string;
+      pageDescription?: string;
+      faviconUrl?: string;
+      screenshotWidth?: number;
+      screenshotHeight?: number;
+    };
+  }
+): Promise<void> {
   this.result.status = 'completed';
   this.result.url = options.url;
   this.result.localPath = options.localPath;
@@ -309,7 +315,10 @@ screenshotSchema.methods.markAsCompleted = async function (options: {
  * Mark the screenshot as failed
  * @param error - Error message
  */
-screenshotSchema.methods.markAsFailed = async function (error: string): Promise<void> {
+screenshotSchema.methods.markAsFailed = async function (
+  this: IScreenshot,
+  error: string
+): Promise<void> {
   this.result.status = 'failed';
   this.result.error = error;
   await this.save();
@@ -321,6 +330,7 @@ screenshotSchema.methods.markAsFailed = async function (error: string): Promise<
  * @param response - Response body (truncated)
  */
 screenshotSchema.methods.recordWebhookAttempt = async function (
+  this: IScreenshot,
   status: number,
   response?: string
 ): Promise<void> {

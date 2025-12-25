@@ -295,7 +295,10 @@ export function planBasedRateLimit(operation: 'screenshot' | 'api' = 'api') {
  * @param max - Maximum requests
  * @param windowMs - Window in milliseconds
  */
-export function ipRateLimit(max: number, windowMs: number = 60000) {
+export function ipRateLimit(
+  max: number,
+  windowMs: number = 60000
+): (req: Request, res: Response, next: NextFunction) => Promise<void> {
   return rateLimit({
     windowMs,
     max,
@@ -312,10 +315,12 @@ export function ipRateLimit(max: number, windowMs: number = 60000) {
  * Limit concurrent requests per user/key
  * @param max - Maximum concurrent requests
  */
-export function concurrentLimit(max: number = 5) {
+export function concurrentLimit(
+  max: number = 5
+): (req: Request, res: Response, next: NextFunction) => void {
   const inFlight = new Map<string, number>();
 
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const key = req.userId?.toString() || req.apiKey?._id.toString() || req.ip || 'unknown';
 
     const current = inFlight.get(key) || 0;

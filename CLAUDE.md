@@ -21,9 +21,17 @@ npm run test:integration # Run integration tests only
 npm run test:e2e         # Run end-to-end tests only
 npm run test:watch       # Run tests in watch mode
 
-# Linting
+# Run a specific test file
+npm test -- auth.service.test.ts
+
+# Run tests matching a pattern
+npm test -- --testNamePattern="should register"
+
+# Code Quality
 npm run lint             # Check for linting issues
 npm run lint:fix         # Auto-fix linting issues
+npm run format           # Format code with Prettier
+npm run typecheck        # Type check without emitting
 ```
 
 ## Architecture
@@ -101,6 +109,7 @@ Configured in tsconfig.json:
 - `@middlewares/*` → `src/middlewares/*`
 - `@routes/*` → `src/routes/*`
 - `@utils/*` → `src/utils/*`
+- `@types/*` → `src/types/*`
 
 ## External Dependencies
 
@@ -117,6 +126,13 @@ docker-compose up        # Start API with MongoDB and Redis
 docker-compose up -d     # Start in detached mode
 ```
 
+## Testing Infrastructure
+
+- Tests use `mongodb-memory-server` for an isolated in-memory MongoDB instance
+- Test setup in `tests/setup.ts` auto-clears collections between tests
+- Global setup/teardown in `tests/globalSetup.ts` and `tests/globalTeardown.ts`
+- Coverage thresholds: 60% lines/functions/statements, 40% branches
+
 ## Environment Variables
 
 Copy `.env.example` to `.env` and configure:
@@ -125,3 +141,9 @@ Copy `.env.example` to `.env` and configure:
 - Stripe API keys
 - AWS credentials (optional)
 - Rate limiting defaults
+
+## Health & Documentation
+
+- Health check: `GET /health`
+- API info: `GET /api/v1`
+- Swagger docs: `http://localhost:3000/docs`

@@ -53,6 +53,7 @@ const usageSchema = new Schema<IUsage>(
     errorBreakdown: {
       type: Map,
       of: Number,
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       default: () => new Map(),
     },
   },
@@ -60,7 +61,7 @@ const usageSchema = new Schema<IUsage>(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: (_doc, ret: Record<string, unknown>) => {
+      transform: (_doc, ret: Record<string, unknown>): Record<string, unknown> => {
         const { __v, ...rest } = ret;
         // Convert errorBreakdown Map to object
         if (rest.errorBreakdown instanceof Map) {
@@ -91,7 +92,7 @@ usageSchema.index({ user: 1, apiKey: 1, date: 1 });
 /**
  * Calculate success rate
  */
-usageSchema.virtual('successRate').get(function (this: IUsage) {
+usageSchema.virtual('successRate').get(function (this: IUsage): string | number {
   if (this.screenshots.total === 0) return 100;
   return ((this.screenshots.successful / this.screenshots.total) * 100).toFixed(2);
 });

@@ -244,21 +244,30 @@ export function validate<T extends ZodSchema>(
 /**
  * Validate request body
  */
-export function validateBody<T extends ZodSchema>(schema: T, options?: ValidationOptions) {
+export function validateBody<T extends ZodSchema>(
+  schema: T,
+  options?: ValidationOptions
+): (req: Request, res: Response, next: NextFunction) => void {
   return validate(schema, 'body', options);
 }
 
 /**
  * Validate query parameters
  */
-export function validateQuery<T extends ZodSchema>(schema: T, options?: ValidationOptions) {
+export function validateQuery<T extends ZodSchema>(
+  schema: T,
+  options?: ValidationOptions
+): (req: Request, res: Response, next: NextFunction) => void {
   return validate(schema, 'query', options);
 }
 
 /**
  * Validate URL parameters
  */
-export function validateParams<T extends ZodSchema>(schema: T, options?: ValidationOptions) {
+export function validateParams<T extends ZodSchema>(
+  schema: T,
+  options?: ValidationOptions
+): (req: Request, res: Response, next: NextFunction) => void {
   return validate(schema, 'params', options);
 }
 

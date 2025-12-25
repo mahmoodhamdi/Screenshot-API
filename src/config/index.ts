@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
 import path from 'path';
-import { PlanLimitsConfig, PlanType, ScreenshotFormat } from '@/types';
+import { PlanLimitsConfig, PlanType, ScreenshotFormat, PlanLimits } from '@/types';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -165,7 +165,7 @@ export const planLimits: PlanLimitsConfig = {
  * @param plan - The subscription plan type
  * @returns Plan limits configuration
  */
-export const getPlanLimits = (plan: PlanType) => {
+export const getPlanLimits = (plan: PlanType): PlanLimits => {
   return planLimits[plan];
 };
 

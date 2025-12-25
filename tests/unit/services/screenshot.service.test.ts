@@ -217,41 +217,41 @@ describe('Screenshot Service', () => {
   // ============================================
 
   describe('checkUsageQuota', () => {
-    it('should pass when usage is under limit', async () => {
+    it('should pass when usage is under limit', () => {
       const user = createMockUser({
         planLimits: { screenshotsPerMonth: 100 },
         usage: { screenshotsThisMonth: 50 },
       });
 
-      await expect(checkUsageQuota(user)).resolves.toBeUndefined();
+      expect(() => checkUsageQuota(user)).not.toThrow();
     });
 
-    it('should throw error when usage equals limit', async () => {
+    it('should throw error when usage equals limit', () => {
       const user = createMockUser({
         planLimits: { screenshotsPerMonth: 100 },
         usage: { screenshotsThisMonth: 100 },
       });
 
-      await expect(checkUsageQuota(user)).rejects.toThrow(AppError);
-      await expect(checkUsageQuota(user)).rejects.toThrow('Monthly screenshot limit');
+      expect(() => checkUsageQuota(user)).toThrow(AppError);
+      expect(() => checkUsageQuota(user)).toThrow('Monthly screenshot limit');
     });
 
-    it('should throw error when usage exceeds limit', async () => {
+    it('should throw error when usage exceeds limit', () => {
       const user = createMockUser({
         planLimits: { screenshotsPerMonth: 100 },
         usage: { screenshotsThisMonth: 150 },
       });
 
-      await expect(checkUsageQuota(user)).rejects.toThrow(AppError);
+      expect(() => checkUsageQuota(user)).toThrow(AppError);
     });
 
-    it('should pass when usage is at zero', async () => {
+    it('should pass when usage is at zero', () => {
       const user = createMockUser({
         planLimits: { screenshotsPerMonth: 100 },
         usage: { screenshotsThisMonth: 0 },
       });
 
-      await expect(checkUsageQuota(user)).resolves.toBeUndefined();
+      expect(() => checkUsageQuota(user)).not.toThrow();
     });
   });
 });

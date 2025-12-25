@@ -81,7 +81,7 @@ async function startServer(): Promise<void> {
 
 let isShuttingDown = false;
 
-async function gracefulShutdown(signal: string): Promise<void> {
+function gracefulShutdown(signal: string): void {
   if (isShuttingDown) {
     logger.warn('Shutdown already in progress, ignoring signal');
     return;

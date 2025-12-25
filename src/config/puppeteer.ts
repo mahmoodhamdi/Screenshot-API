@@ -151,7 +151,7 @@ export const getBrowser = async (): Promise<Browser> => {
 
   // Wait for an available browser
   return new Promise((resolve) => {
-    const checkInterval = setInterval(async () => {
+    const checkInterval = setInterval(() => {
       const available = browserPool.find((b) => !b.inUse);
       if (available) {
         clearInterval(checkInterval);

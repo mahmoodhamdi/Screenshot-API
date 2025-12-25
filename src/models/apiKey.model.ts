@@ -75,7 +75,7 @@ const apiKeySchema = new Schema<IApiKey>(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: (_doc, ret: Record<string, unknown>) => {
+      transform: (_doc, ret: Record<string, unknown>): Record<string, unknown> => {
         // Never expose the actual key in JSON responses
         const { key: _key, keyHash: _keyHash, __v: _v, ...rest } = ret;
         return rest;

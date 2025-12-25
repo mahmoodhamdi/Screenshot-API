@@ -189,12 +189,13 @@ export const updatePlan = asyncHandler(async (req: Request, res: Response) => {
  * Get usage statistics
  * GET /api/v1/subscriptions/usage
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export const usage = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     throw new AppError('Authentication required', 401, ERROR_CODES.UNAUTHORIZED);
   }
 
-  const stats = await getUsageStats(req.user);
+  const stats = getUsageStats(req.user);
 
   res.json({
     success: true,
@@ -206,6 +207,7 @@ export const usage = asyncHandler(async (req: Request, res: Response) => {
  * Get available plans
  * GET /api/v1/subscriptions/plans
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export const plans = asyncHandler(async (_req: Request, res: Response) => {
   const availablePlans = getAvailablePlans();
 

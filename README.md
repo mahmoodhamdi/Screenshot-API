@@ -107,11 +107,27 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 
 See [.env.example](.env.example) for all available options.
 
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Setup Guide](docs/SETUP.md) | Installation and configuration |
+| [Deployment Guide](docs/DEPLOYMENT.md) | Production deployment |
+| [API Documentation](docs/API.md) | Complete API reference |
+| [Swagger UI](/docs) | Interactive API explorer |
+| [ReDoc](/redoc) | Alternative API documentation |
+
 ## API Documentation
 
 ### Interactive Documentation
 
-Once running, visit `http://localhost:3000/docs` for interactive Swagger documentation.
+Once running, visit these documentation endpoints:
+
+- `http://localhost:3000/api-docs` - Documentation portal
+- `http://localhost:3000/docs` - Swagger UI (interactive, dark theme)
+- `http://localhost:3000/redoc` - ReDoc (readable, dark theme)
+- `http://localhost:3000/docs/openapi.json` - OpenAPI 3.0 JSON spec
+- `http://localhost:3000/docs/openapi.yaml` - OpenAPI 3.0 YAML spec
 
 ### Quick Examples
 
@@ -393,9 +409,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- **Documentation**: [docs/API.md](docs/API.md)
+- **Setup Guide**: [docs/SETUP.md](docs/SETUP.md)
+- **Deployment Guide**: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- **API Documentation**: [docs/API.md](docs/API.md)
 - **Issues**: [GitHub Issues](https://github.com/mahmoodhamdi/Screenshot-API/issues)
-- **Email**: support@screenshot-api.com
+- **Email**: hmdy7486@gmail.com
 
 ## Author
 

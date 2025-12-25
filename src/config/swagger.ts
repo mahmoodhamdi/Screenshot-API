@@ -449,6 +449,413 @@ Rate limits vary by subscription plan:
             resetDate: { type: 'string', format: 'date-time' },
           },
         },
+
+        // Screenshot Response Wrapper
+        ScreenshotResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/Screenshot' },
+          },
+        },
+
+        // Screenshot List Response
+        ScreenshotListResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/Screenshot' },
+            },
+            pagination: {
+              type: 'object',
+              properties: {
+                page: { type: 'integer', example: 1 },
+                limit: { type: 'integer', example: 20 },
+                total: { type: 'integer', example: 150 },
+                totalPages: { type: 'integer', example: 8 },
+                hasNext: { type: 'boolean', example: true },
+                hasPrev: { type: 'boolean', example: false },
+              },
+            },
+          },
+        },
+
+        // Checkout Request Schema
+        CreateCheckoutRequest: {
+          type: 'object',
+          required: ['plan', 'successUrl', 'cancelUrl'],
+          properties: {
+            plan: {
+              type: 'string',
+              enum: ['starter', 'professional', 'enterprise'],
+              description: 'Subscription plan to purchase',
+              example: 'professional',
+            },
+            successUrl: {
+              type: 'string',
+              format: 'uri',
+              description: 'URL to redirect after successful payment',
+              example: 'https://myapp.com/payment/success',
+            },
+            cancelUrl: {
+              type: 'string',
+              format: 'uri',
+              description: 'URL to redirect if payment is cancelled',
+              example: 'https://myapp.com/payment/cancel',
+            },
+          },
+        },
+
+        // Checkout Response Schema
+        CheckoutResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'object',
+              properties: {
+                sessionId: {
+                  type: 'string',
+                  description: 'Stripe checkout session ID',
+                  example: 'cs_test_a1b2c3d4e5f6g7h8i9j0',
+                },
+                url: {
+                  type: 'string',
+                  format: 'uri',
+                  description: 'Stripe checkout URL to redirect user',
+                  example: 'https://checkout.stripe.com/pay/cs_test_...',
+                },
+              },
+            },
+          },
+        },
+
+        // Portal Response Schema
+        PortalResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'object',
+              properties: {
+                url: {
+                  type: 'string',
+                  format: 'uri',
+                  description: 'Stripe billing portal URL',
+                  example: 'https://billing.stripe.com/session/...',
+                },
+              },
+            },
+          },
+        },
+
+        // Analytics Overview Response
+        AnalyticsOverview: {
+          type: 'object',
+          properties: {
+            totalScreenshots: {
+              type: 'integer',
+              description: 'Total screenshots captured all-time',
+              example: 1250,
+            },
+            successfulScreenshots: {
+              type: 'integer',
+              description: 'Number of successful screenshots',
+              example: 1200,
+            },
+            failedScreenshots: {
+              type: 'integer',
+              description: 'Number of failed screenshots',
+              example: 50,
+            },
+            successRate: {
+              type: 'integer',
+              description: 'Success rate as percentage (0-100)',
+              example: 96,
+            },
+            averageResponseTime: {
+              type: 'integer',
+              description: 'Average response time in milliseconds',
+              example: 2500,
+            },
+            totalBandwidth: {
+              type: 'integer',
+              description: 'Total bandwidth consumed in bytes',
+              example: 524288000,
+            },
+            screenshotsToday: {
+              type: 'integer',
+              description: 'Screenshots captured today',
+              example: 25,
+            },
+            screenshotsThisWeek: {
+              type: 'integer',
+              description: 'Screenshots captured this week',
+              example: 150,
+            },
+            screenshotsThisMonth: {
+              type: 'integer',
+              description: 'Screenshots captured this month',
+              example: 500,
+            },
+            currentPlan: {
+              type: 'string',
+              enum: ['free', 'starter', 'professional', 'enterprise'],
+              description: "User's current subscription plan",
+              example: 'professional',
+            },
+            usagePercentage: {
+              type: 'integer',
+              description: 'Percentage of monthly quota used (0-100)',
+              example: 45,
+            },
+            planLimit: {
+              type: 'integer',
+              description: 'Monthly screenshot limit for current plan',
+              example: 1000,
+            },
+          },
+        },
+
+        // Screenshot Stats Response
+        ScreenshotStats: {
+          type: 'object',
+          properties: {
+            byStatus: {
+              type: 'object',
+              description: 'Screenshot counts by status',
+              properties: {
+                pending: { type: 'integer', example: 5 },
+                processing: { type: 'integer', example: 2 },
+                completed: { type: 'integer', example: 1200 },
+                failed: { type: 'integer', example: 50 },
+              },
+            },
+            byFormat: {
+              type: 'object',
+              description: 'Screenshot counts by format',
+              additionalProperties: { type: 'integer' },
+              example: { png: 800, jpeg: 300, webp: 100, pdf: 50 },
+            },
+            byResolution: {
+              type: 'array',
+              description: 'Top 5 resolutions used',
+              items: {
+                type: 'object',
+                properties: {
+                  width: { type: 'integer', example: 1920 },
+                  height: { type: 'integer', example: 1080 },
+                  count: { type: 'integer', example: 450 },
+                },
+              },
+            },
+            averageDuration: {
+              type: 'integer',
+              description: 'Average capture duration in milliseconds',
+              example: 2500,
+            },
+            averageSize: {
+              type: 'integer',
+              description: 'Average file size in bytes',
+              example: 524288,
+            },
+            fullPageCount: {
+              type: 'integer',
+              description: 'Number of full-page screenshots',
+              example: 300,
+            },
+            regularCount: {
+              type: 'integer',
+              description: 'Number of regular screenshots',
+              example: 950,
+            },
+          },
+        },
+
+        // Usage Over Time Response
+        UsageOverTime: {
+          type: 'object',
+          properties: {
+            period: {
+              type: 'string',
+              enum: ['day', 'week', 'month'],
+              description: 'Time period used for grouping',
+              example: 'day',
+            },
+            data: {
+              type: 'array',
+              description: 'Usage data points',
+              items: {
+                type: 'object',
+                properties: {
+                  date: {
+                    type: 'string',
+                    description: 'Date/period identifier',
+                    example: '2024-12-25',
+                  },
+                  screenshots: {
+                    type: 'integer',
+                    description: 'Total screenshots in this period',
+                    example: 45,
+                  },
+                  successful: {
+                    type: 'integer',
+                    description: 'Successful screenshots',
+                    example: 43,
+                  },
+                  failed: {
+                    type: 'integer',
+                    description: 'Failed screenshots',
+                    example: 2,
+                  },
+                  bandwidth: {
+                    type: 'integer',
+                    description: 'Bandwidth consumed in bytes',
+                    example: 23592960,
+                  },
+                  avgResponseTime: {
+                    type: 'integer',
+                    description: 'Average response time in milliseconds',
+                    example: 2350,
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        // Error Breakdown Response
+        ErrorBreakdown: {
+          type: 'object',
+          properties: {
+            totalErrors: {
+              type: 'integer',
+              description: 'Total number of failed screenshots',
+              example: 50,
+            },
+            byType: {
+              type: 'object',
+              description: 'Error counts by category',
+              additionalProperties: { type: 'integer' },
+              example: {
+                timeout: 20,
+                network: 15,
+                navigation: 8,
+                invalid_url: 5,
+                blocked: 2,
+              },
+            },
+            topErrors: {
+              type: 'array',
+              description: 'Top 10 most frequent error messages',
+              items: {
+                type: 'object',
+                properties: {
+                  error: {
+                    type: 'string',
+                    description: 'Error message',
+                    example: 'Navigation timeout of 30000 ms exceeded',
+                  },
+                  count: {
+                    type: 'integer',
+                    description: 'Number of occurrences',
+                    example: 15,
+                  },
+                  lastOccurred: {
+                    type: 'string',
+                    format: 'date-time',
+                    description: 'When this error last occurred',
+                    example: '2024-12-25T10:30:00Z',
+                  },
+                },
+              },
+            },
+            errorRate: {
+              type: 'integer',
+              description: 'Error rate as percentage (0-100)',
+              example: 4,
+            },
+          },
+        },
+
+        // Popular URL Response
+        PopularUrl: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              format: 'uri',
+              description: 'Full URL that was captured',
+              example: 'https://example.com/page',
+            },
+            domain: {
+              type: 'string',
+              description: 'Extracted domain from URL',
+              example: 'example.com',
+            },
+            count: {
+              type: 'integer',
+              description: 'Number of times this URL was captured',
+              example: 45,
+            },
+            lastCaptured: {
+              type: 'string',
+              format: 'date-time',
+              description: 'When this URL was last captured',
+              example: '2024-12-25T14:30:00Z',
+            },
+          },
+        },
+
+        // API Key Stats Response
+        ApiKeyStats: {
+          type: 'object',
+          properties: {
+            totalRequests: {
+              type: 'integer',
+              description: 'Total requests made with this API key',
+              example: 500,
+            },
+            successfulRequests: {
+              type: 'integer',
+              description: 'Number of successful requests',
+              example: 480,
+            },
+            failedRequests: {
+              type: 'integer',
+              description: 'Number of failed requests',
+              example: 20,
+            },
+            lastUsed: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true,
+              description: 'When this API key was last used',
+              example: '2024-12-25T15:45:00Z',
+            },
+            usageByDay: {
+              type: 'array',
+              description: 'Daily usage for the last 30 days',
+              items: {
+                type: 'object',
+                properties: {
+                  date: {
+                    type: 'string',
+                    description: 'Date (YYYY-MM-DD format)',
+                    example: '2024-12-25',
+                  },
+                  count: {
+                    type: 'integer',
+                    description: 'Number of requests on this date',
+                    example: 25,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       responses: {
         UnauthorizedError: {
@@ -537,6 +944,104 @@ Rate limits vary by subscription plan:
                 error: {
                   code: 'QUOTA_EXCEEDED',
                   message: 'Monthly screenshot quota exceeded. Upgrade your plan for more.',
+                },
+              },
+            },
+          },
+        },
+
+        // Response aliases used in route documentation
+        Unauthorized: {
+          description: 'Authentication required or invalid credentials',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' },
+              example: {
+                success: false,
+                error: {
+                  code: 'UNAUTHORIZED',
+                  message: 'Authentication required',
+                },
+              },
+            },
+          },
+        },
+
+        BadRequest: {
+          description: 'Invalid request parameters or body',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' },
+              example: {
+                success: false,
+                error: {
+                  code: 'BAD_REQUEST',
+                  message: 'Invalid request',
+                  details: [{ field: 'url', message: 'URL is required' }],
+                },
+              },
+            },
+          },
+        },
+
+        NotFound: {
+          description: 'Resource not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' },
+              example: {
+                success: false,
+                error: {
+                  code: 'NOT_FOUND',
+                  message: 'Resource not found',
+                },
+              },
+            },
+          },
+        },
+
+        RateLimitExceeded: {
+          description: 'Rate limit exceeded',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' },
+              example: {
+                success: false,
+                error: {
+                  code: 'RATE_LIMIT_EXCEEDED',
+                  message: 'Too many requests. Please try again later.',
+                },
+              },
+            },
+          },
+        },
+
+        QuotaExceeded: {
+          description: 'Monthly quota exceeded',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' },
+              example: {
+                success: false,
+                error: {
+                  code: 'QUOTA_EXCEEDED',
+                  message: 'Monthly screenshot quota exceeded. Upgrade your plan for more.',
+                },
+              },
+            },
+          },
+        },
+
+        PaymentRequired: {
+          description: 'Payment required for this feature',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' },
+              example: {
+                success: false,
+                error: {
+                  code: 'PAYMENT_REQUIRED',
+                  message: 'This feature requires a paid subscription',
                 },
               },
             },

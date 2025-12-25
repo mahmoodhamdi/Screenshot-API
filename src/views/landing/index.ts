@@ -8,8 +8,8 @@ import { getButtonStyles } from './components/button';
 import { getCardStyles } from './components/card';
 import { getIconStyles } from './components/icons';
 
-// Section imports (placeholders for now)
-import { generateHeroSection, getHeroStyles } from './sections/hero';
+// Section imports
+import { generateHeroSection, getHeroStyles, getHeroScript } from './sections/hero';
 import { generateFeaturesSection, getFeaturesStyles } from './sections/features';
 import { generateCodeDemoSection, getCodeDemoStyles } from './sections/code-demo';
 import { generatePricingSection, getPricingStyles } from './sections/pricing';
@@ -37,8 +37,8 @@ export function generateLandingPage(config: LandingPageConfig = {}): string {
   const navLinks = [
     { text: 'Features', href: '#features' },
     { text: 'Pricing', href: '#pricing' },
-    { text: 'Documentation', href: '/docs' },
-    { text: 'API Reference', href: '/api/v1' },
+    { text: 'Docs', href: '/docs' },
+    { text: 'Developer', href: '/developer' },
   ];
 
   // Generate all sections
@@ -70,6 +70,7 @@ export function generateLandingPage(config: LandingPageConfig = {}): string {
   // Combine all scripts
   const scripts = `
     ${getNavbarScript()}
+    ${getHeroScript()}
     ${getBaseScripts()}
   `;
 

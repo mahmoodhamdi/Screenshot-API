@@ -23,7 +23,7 @@ import {
   getTestimonialsScript,
 } from './sections/testimonials';
 import { generateCtaSection, getCtaStyles } from './sections/cta';
-import { generateFooter, getFooterStyles } from './sections/footer';
+import { generateFooter, getFooterStyles, getFooterScript } from './sections/footer';
 
 export interface LandingPageConfig {
   title?: string;
@@ -82,6 +82,7 @@ export function generateLandingPage(config: LandingPageConfig = {}): string {
     ${getCodeDemoScript()}
     ${getPricingScript()}
     ${getTestimonialsScript()}
+    ${getFooterScript()}
     ${getBaseScripts()}
   `;
 

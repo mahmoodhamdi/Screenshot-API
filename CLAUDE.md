@@ -76,6 +76,7 @@ The system enforces limits based on subscription tier (free/starter/professional
 # Authentication
 POST   /api/v1/auth/register
 POST   /api/v1/auth/login
+GET    /api/v1/auth/me              # Get current user (requires JWT)
 POST   /api/v1/auth/api-keys
 GET    /api/v1/auth/api-keys
 DELETE /api/v1/auth/api-keys/:id
@@ -129,9 +130,10 @@ docker-compose up -d     # Start in detached mode
 ## Testing Infrastructure
 
 - Tests use `mongodb-memory-server` for an isolated in-memory MongoDB instance
-- Test setup in `tests/setup.ts` auto-clears collections between tests
+- Test setup in `tests/setup.ts` auto-clears all collections after each test
 - Global setup/teardown in `tests/globalSetup.ts` and `tests/globalTeardown.ts`
 - Coverage thresholds: 60% lines/functions/statements, 40% branches
+- Test timeout: 30 seconds (important for Puppeteer-based tests)
 
 ## Environment Variables
 
@@ -146,4 +148,82 @@ Copy `.env.example` to `.env` and configure:
 
 - Health check: `GET /health`
 - API info: `GET /api/v1`
-- Swagger docs: `http://localhost:3000/docs`
+
+### Documentation Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `/developer` | Developer Portal with code examples & SDKs |
+| `/api-docs` | Documentation landing page |
+| `/docs` | Swagger UI (interactive) |
+| `/redoc` | ReDoc (readable) |
+| `/docs/openapi.json` | OpenAPI 3.0 JSON spec |
+| `/docs/openapi.yaml` | OpenAPI 3.0 YAML spec |
+| `/docs/postman.json` | Postman Collection v2.1 |
+| `/docs/insomnia.json` | Insomnia Export v4 |
+| `/docs/bruno.json` | Bruno Collection |
+
+### Developer Portal Features
+
+The `/developer` endpoint provides:
+- Quick Start Guide with step-by-step instructions
+- Code examples in 10 languages: Node.js, Python, PHP, cURL, Ruby, Go, Java, C#, Fetch API, HTTPie
+- SDK installation commands
+- Downloadable API collections for Postman, Insomnia, and Bruno
+- Syntax highlighted code with copy-to-clipboard functionality
+
+## Landing Page
+
+The root route (`/`) serves a professional SaaS landing page built with TypeScript template generators.
+
+### Landing Page Structure
+
+```
+src/views/landing/
+├── index.ts              # Main page generator with styles
+├── sections/
+│   ├── hero.ts           # Hero section with CTA
+│   ├── features.ts       # Feature cards and detailed features
+│   ├── code-demo.ts      # Interactive code examples
+│   ├── pricing.ts        # Pricing plans with toggle
+│   ├── testimonials.ts   # Stats, reviews, company logos
+│   ├── cta.ts            # Call-to-action section
+│   └── footer.ts         # Footer with newsletter
+└── components/
+    ├── navbar.ts         # Responsive navigation
+    ├── button.ts         # Button component
+    ├── card.ts           # Card component
+    └── icons.ts          # SVG icon library
+```
+
+### Key Features
+
+- **Dark Theme**: Professional indigo/purple gradient design
+- **Responsive**: Mobile-first with breakpoints at 375px, 640px, 768px, 1024px
+- **Touch Optimized**: 44px minimum touch targets, swipe gestures
+- **Accessible**: Skip links, ARIA labels, keyboard navigation, focus states
+- **SEO Ready**: Meta tags, Open Graph, Twitter Cards, JSON-LD structured data
+- **Animations**: Scroll reveals, hover effects, respects prefers-reduced-motion
+- **Performance**: Preconnect hints, lazy loading, optimized CSS
+
+### Design System
+
+Colors:
+- Primary background: `#0a0a0f`
+- Accent primary: `#6366f1` (Indigo)
+- Accent secondary: `#8b5cf6` (Purple)
+- Success: `#10b981`
+
+Typography:
+- Sans: Inter
+- Mono: JetBrains Mono
+
+## Key Implementation Details
+
+- **Input Validation**: Zod schemas validate all request payloads
+- **Logging**: Winston logger with structured JSON output
+- **Browser Pool**: Puppeteer instances are pooled and reused (`PUPPETEER_MAX_CONCURRENT` controls pool size)
+- **Storage Fallback**: If AWS S3 is not configured, screenshots are stored locally in `./uploads`
+- **Code Generator**: `src/utils/docs/code-generator.ts` generates code snippets for all supported languages
+- **Collection Generator**: `src/utils/docs/collection-generator.ts` generates Postman/Insomnia/Bruno collections
+- **Landing Page**: `src/views/landing/index.ts` generates the marketing landing page

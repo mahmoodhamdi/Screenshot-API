@@ -17,6 +17,19 @@ Professional screenshot capture API powered by Puppeteer. Capture high-quality s
 - **Analytics**: Detailed usage statistics and insights
 - **Subscription Plans**: Free tier with paid upgrades via Stripe
 
+## Landing Page
+
+Visit the root URL (`/`) to see the professional marketing landing page featuring:
+
+- **Hero Section**: Compelling headline with CTA buttons
+- **Features Grid**: 6 feature cards with detailed sections
+- **Interactive Code Demo**: Live code examples in multiple languages
+- **Pricing Plans**: 4 tiers with monthly/yearly toggle
+- **Testimonials**: Stats, reviews, and company logos carousel
+- **Newsletter**: Email subscription form
+
+The landing page is fully responsive, accessible (WCAG 2.1), and optimized for performance.
+
 ## Tech Stack
 
 - **Runtime**: Node.js 20+
@@ -275,6 +288,8 @@ screenshot-api/
 │   ├── services/        # Business logic
 │   ├── types/           # TypeScript types
 │   ├── utils/           # Utility functions
+│   ├── views/           # Page templates
+│   │   └── landing/     # Landing page generator
 │   ├── app.ts           # Express app
 │   └── server.ts        # Server entry point
 ├── tests/

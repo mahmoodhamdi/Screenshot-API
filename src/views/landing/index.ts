@@ -16,7 +16,7 @@ import {
   getCodeDemoStyles,
   getCodeDemoScript,
 } from './sections/code-demo';
-import { generatePricingSection, getPricingStyles } from './sections/pricing';
+import { generatePricingSection, getPricingStyles, getPricingScript } from './sections/pricing';
 import { generateTestimonialsSection, getTestimonialsStyles } from './sections/testimonials';
 import { generateCtaSection, getCtaStyles } from './sections/cta';
 import { generateFooter, getFooterStyles } from './sections/footer';
@@ -76,6 +76,7 @@ export function generateLandingPage(config: LandingPageConfig = {}): string {
     ${getNavbarScript()}
     ${getHeroScript()}
     ${getCodeDemoScript()}
+    ${getPricingScript()}
     ${getBaseScripts()}
   `;
 

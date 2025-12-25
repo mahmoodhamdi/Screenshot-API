@@ -13,6 +13,8 @@ export interface CardProps {
   highlighted?: boolean;
   badge?: string;
   children?: string;
+  ariaLabel?: string;
+  tabIndex?: number;
 }
 
 export function generateCard(props: CardProps): string {
@@ -26,6 +28,8 @@ export function generateCard(props: CardProps): string {
     highlighted = false,
     badge,
     children,
+    ariaLabel,
+    tabIndex,
   } = props;
 
   const classes = ['card', `card-${variant}`, highlighted ? 'card-highlighted' : '']
@@ -33,12 +37,14 @@ export function generateCard(props: CardProps): string {
     .join(' ');
 
   const iconHtml = iconEmoji
-    ? `<div class="card-icon">${iconEmoji}</div>`
+    ? `<div class="card-icon" aria-hidden="true">${iconEmoji}</div>`
     : icon
-      ? `<div class="card-icon"><i class="${icon}"></i></div>`
+      ? `<div class="card-icon" aria-hidden="true"><i class="${icon}"></i></div>`
       : '';
 
   const badgeHtml = badge ? `<span class="card-badge">${badge}</span>` : '';
+  const ariaLabelAttr = ariaLabel ? `aria-label="${ariaLabel}"` : '';
+  const tabIndexAttr = tabIndex !== undefined ? `tabindex="${tabIndex}"` : '';
 
   const content = `
     ${badgeHtml}
@@ -49,10 +55,12 @@ export function generateCard(props: CardProps): string {
   `;
 
   if (href) {
-    return `<a href="${href}" class="${classes}">${content}</a>`;
+    const isExternal = href.startsWith('http');
+    const externalAttrs = isExternal ? 'target="_blank" rel="noopener noreferrer"' : '';
+    return `<a href="${href}" class="${classes}" ${ariaLabelAttr} ${externalAttrs}>${content}</a>`;
   }
 
-  return `<div class="${classes}">${content}</div>`;
+  return `<div class="${classes}" ${ariaLabelAttr} ${tabIndexAttr} role="article">${content}</div>`;
 }
 
 export function getCardStyles(): string {
@@ -63,15 +71,43 @@ export function getCardStyles(): string {
       border: 1px solid var(--border-color);
       border-radius: 1rem;
       padding: 1.5rem;
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
+      will-change: transform, box-shadow;
+    }
+
+    /* Glow effect overlay */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(99, 102, 241, 0.1), transparent 50%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .card:hover::before {
+      opacity: 1;
     }
 
     .card:hover {
-      transform: translateY(-4px);
+      transform: translateY(-8px);
       border-color: var(--border-hover);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        0 0 40px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Focus State */
+    .card:focus-visible {
+      outline: 2px solid var(--accent-primary);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3);
     }
 
     a.card {
@@ -91,10 +127,24 @@ export function getCardStyles(): string {
       justify-content: center;
       font-size: 1.5rem;
       margin-bottom: 1rem;
+      transition: transform 0.3s ease, background 0.3s ease;
+    }
+
+    .card:hover .card-icon {
+      transform: scale(1.1);
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%);
     }
 
     .card-icon i {
       color: var(--accent-primary);
+    }
+
+    .card-icon svg {
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover .card-icon svg {
+      transform: scale(1.1);
     }
 
     /* Card Title */
@@ -103,6 +153,11 @@ export function getCardStyles(): string {
       font-weight: 600;
       color: var(--text-primary);
       margin: 0 0 0.5rem 0;
+      transition: color 0.3s ease;
+    }
+
+    .card:hover .card-title {
+      color: var(--accent-primary);
     }
 
     /* Card Description */
@@ -126,6 +181,12 @@ export function getCardStyles(): string {
       border-radius: 1rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      animation: pulse-badge 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-badge {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
     }
 
     /* Card Highlighted */
@@ -136,6 +197,9 @@ export function getCardStyles(): string {
 
     .card-highlighted:hover {
       border-color: var(--accent-secondary);
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        0 0 60px rgba(99, 102, 241, 0.2);
     }
 
     /* Feature Card */
@@ -165,6 +229,11 @@ export function getCardStyles(): string {
       font-style: italic;
       font-size: 1rem;
       margin-bottom: 1.5rem;
+    }
+
+    /* Card Active/Pressed State */
+    .card:active {
+      transform: translateY(-4px) scale(0.99);
     }
   `;
 }

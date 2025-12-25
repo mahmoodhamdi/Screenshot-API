@@ -11,7 +11,11 @@ import { getIconStyles } from './components/icons';
 // Section imports
 import { generateHeroSection, getHeroStyles, getHeroScript } from './sections/hero';
 import { generateFeaturesSection, getFeaturesStyles } from './sections/features';
-import { generateCodeDemoSection, getCodeDemoStyles } from './sections/code-demo';
+import {
+  generateCodeDemoSection,
+  getCodeDemoStyles,
+  getCodeDemoScript,
+} from './sections/code-demo';
 import { generatePricingSection, getPricingStyles } from './sections/pricing';
 import { generateTestimonialsSection, getTestimonialsStyles } from './sections/testimonials';
 import { generateCtaSection, getCtaStyles } from './sections/cta';
@@ -71,6 +75,7 @@ export function generateLandingPage(config: LandingPageConfig = {}): string {
   const scripts = `
     ${getNavbarScript()}
     ${getHeroScript()}
+    ${getCodeDemoScript()}
     ${getBaseScripts()}
   `;
 

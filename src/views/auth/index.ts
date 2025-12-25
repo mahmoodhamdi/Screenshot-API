@@ -8,6 +8,7 @@ import { getFormInputStyles } from './components/form-input';
 import { getFormButtonStyles } from './components/form-button';
 import { getAuthCardStyles } from './components/auth-card';
 import { generateLoginForm, getLoginStyles, getLoginScripts } from './pages/login';
+import { generateRegisterForm, getRegisterStyles, getRegisterScripts } from './pages/register';
 
 export type AuthPageType =
   | 'login'
@@ -191,6 +192,8 @@ function getPageContent(page: AuthPageType, config: AuthPageConfig): string {
   switch (page) {
     case 'login':
       return generateLoginForm({ baseUrl: config.baseUrl });
+    case 'register':
+      return generateRegisterForm({ baseUrl: config.baseUrl });
     default:
       return getPagePlaceholder(page, PAGE_META[page]);
   }
@@ -203,6 +206,8 @@ function getPageStyles(page: AuthPageType): string {
   switch (page) {
     case 'login':
       return getLoginStyles();
+    case 'register':
+      return getRegisterStyles();
     default:
       return '';
   }
@@ -215,6 +220,8 @@ function getPageScripts(page: AuthPageType): string {
   switch (page) {
     case 'login':
       return getLoginScripts();
+    case 'register':
+      return getRegisterScripts();
     default:
       return '';
   }

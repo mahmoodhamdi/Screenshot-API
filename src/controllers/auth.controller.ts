@@ -29,7 +29,7 @@ const register = asyncHandler(async (req: Request, res: Response) => {
   });
 
   // Generate verification token
-  const verificationToken = await authService.generateVerificationToken(email);
+  const verificationToken = await authService.generateVerificationToken(user._id);
 
   res.status(201).json({
     success: true,

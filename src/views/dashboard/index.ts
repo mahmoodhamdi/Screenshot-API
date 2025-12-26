@@ -25,6 +25,7 @@ import { generateApiKeysPage, getApiKeysStyles, getApiKeysScripts } from './page
 import { getChartStyles, getChartScripts } from './components/chart';
 import { generateUsagePage, getUsageStyles, getUsageScripts } from './pages/usage';
 import { generateSettingsPage, getSettingsStyles, getSettingsScripts } from './pages/settings';
+import { generateBillingPage, getBillingStyles, getBillingScripts } from './pages/billing';
 
 export type DashboardPageType =
   | 'overview'
@@ -179,7 +180,7 @@ function getPageContent(page: DashboardPageType, config: DashboardPageConfig): s
     case 'settings':
       return generateSettingsPage();
     case 'billing':
-      return getBillingPlaceholder();
+      return generateBillingPage();
     default:
       return generateOverviewPage(config);
   }
@@ -245,6 +246,8 @@ function getPageStyles(page: DashboardPageType): string {
       `;
     case 'settings':
       return getSettingsStyles();
+    case 'billing':
+      return getBillingStyles();
     default:
       return placeholderStyles;
   }
@@ -274,27 +277,14 @@ function getPageScripts(page: DashboardPageType): string {
       `;
     case 'settings':
       return getSettingsScripts();
+    case 'billing':
+      return getBillingScripts();
     default:
       return `
         // ${page} page scripts
         console.log('Dashboard page loaded: ${page}');
       `;
   }
-}
-
-// Placeholder content for pages not yet implemented
-
-function getBillingPlaceholder(): string {
-  return `
-    <div class="dashboard-placeholder">
-      <svg class="dashboard-placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="1" y="4" width="22" height="16" rx="2"/>
-        <path d="M1 10h22"/>
-      </svg>
-      <h3 class="dashboard-placeholder-title">Billing</h3>
-      <p class="dashboard-placeholder-text">Subscription and billing info will appear here.</p>
-    </div>
-  `;
 }
 
 /**

@@ -24,6 +24,7 @@ import {
 import { generateApiKeysPage, getApiKeysStyles, getApiKeysScripts } from './pages/api-keys';
 import { getChartStyles, getChartScripts } from './components/chart';
 import { generateUsagePage, getUsageStyles, getUsageScripts } from './pages/usage';
+import { generateSettingsPage, getSettingsStyles, getSettingsScripts } from './pages/settings';
 
 export type DashboardPageType =
   | 'overview'
@@ -176,7 +177,7 @@ function getPageContent(page: DashboardPageType, config: DashboardPageConfig): s
     case 'usage':
       return generateUsagePage();
     case 'settings':
-      return getSettingsPlaceholder();
+      return generateSettingsPage();
     case 'billing':
       return getBillingPlaceholder();
     default:
@@ -242,6 +243,8 @@ function getPageStyles(page: DashboardPageType): string {
         ${getChartStyles()}
         ${getUsageStyles()}
       `;
+    case 'settings':
+      return getSettingsStyles();
     default:
       return placeholderStyles;
   }
@@ -269,6 +272,8 @@ function getPageScripts(page: DashboardPageType): string {
         ${getChartScripts()}
         ${getUsageScripts()}
       `;
+    case 'settings':
+      return getSettingsScripts();
     default:
       return `
         // ${page} page scripts
@@ -278,18 +283,6 @@ function getPageScripts(page: DashboardPageType): string {
 }
 
 // Placeholder content for pages not yet implemented
-function getSettingsPlaceholder(): string {
-  return `
-    <div class="dashboard-placeholder">
-      <svg class="dashboard-placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-      </svg>
-      <h3 class="dashboard-placeholder-title">Settings</h3>
-      <p class="dashboard-placeholder-text">Account settings will appear here.</p>
-    </div>
-  `;
-}
 
 function getBillingPlaceholder(): string {
   return `

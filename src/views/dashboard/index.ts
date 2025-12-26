@@ -7,7 +7,15 @@ import { generateDashboardLayout, getDashboardLayoutStyles } from './layouts/das
 import { getSidebarStyles } from './components/sidebar';
 import { getHeaderStyles } from './components/header';
 import { getStatCardStyles } from './components/stat-card';
+import { getDataTableStyles, getDataTableScripts } from './components/data-table';
+import { getPaginationStyles, getPaginationScripts } from './components/pagination';
+import { getEmptyStateStyles } from './components/empty-state';
 import { generateOverviewPage, getOverviewStyles, getOverviewScripts } from './pages/overview';
+import {
+  generateScreenshotsPage,
+  getScreenshotsStyles,
+  getScreenshotsScripts,
+} from './pages/screenshots';
 
 export type DashboardPageType =
   | 'overview'
@@ -152,7 +160,7 @@ function getPageContent(page: DashboardPageType, config: DashboardPageConfig): s
     case 'overview':
       return generateOverviewPage(config);
     case 'screenshots':
-      return getScreenshotsPlaceholder();
+      return generateScreenshotsPage();
     case 'screenshot-detail':
       return getScreenshotDetailPlaceholder();
     case 'api-keys':
@@ -210,6 +218,13 @@ function getPageStyles(page: DashboardPageType): string {
         ${getStatCardStyles()}
         ${getOverviewStyles()}
       `;
+    case 'screenshots':
+      return `
+        ${getDataTableStyles()}
+        ${getPaginationStyles()}
+        ${getEmptyStateStyles()}
+        ${getScreenshotsStyles()}
+      `;
     default:
       return placeholderStyles;
   }
@@ -222,6 +237,12 @@ function getPageScripts(page: DashboardPageType): string {
   switch (page) {
     case 'overview':
       return getOverviewScripts();
+    case 'screenshots':
+      return `
+        ${getDataTableScripts()}
+        ${getPaginationScripts()}
+        ${getScreenshotsScripts()}
+      `;
     default:
       return `
         // ${page} page scripts
@@ -231,20 +252,6 @@ function getPageScripts(page: DashboardPageType): string {
 }
 
 // Placeholder content for pages not yet implemented
-function getScreenshotsPlaceholder(): string {
-  return `
-    <div class="dashboard-placeholder">
-      <svg class="dashboard-placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <path d="M21 15l-5-5L5 21"/>
-      </svg>
-      <h3 class="dashboard-placeholder-title">Screenshots</h3>
-      <p class="dashboard-placeholder-text">Your screenshots will be listed here.</p>
-    </div>
-  `;
-}
-
 function getScreenshotDetailPlaceholder(): string {
   return `
     <div class="dashboard-placeholder">

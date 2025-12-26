@@ -503,7 +503,7 @@ After completion:
 - [x] Login page works with form validation and API integration
 - [x] Register page works with password strength indicator
 - [x] Forgot password page sends reset emails
-- [ ] Reset password page validates tokens and updates passwords
+- [x] Reset password page validates tokens and updates passwords
 - [ ] Email verification page verifies tokens
 - [x] All pages are responsive (mobile, tablet, desktop)
 - [x] All pages are accessible (WCAG 2.1)

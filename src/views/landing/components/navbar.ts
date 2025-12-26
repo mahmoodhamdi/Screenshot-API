@@ -18,7 +18,7 @@ export interface NavbarProps {
 }
 
 export function generateNavbar(props: NavbarProps): string {
-  const { links, ctaText = 'Get Started', ctaHref = '/api/v1/auth/register' } = props;
+  const { links, ctaText = 'Get Started', ctaHref = '/register' } = props;
 
   const navLinksHtml = links
     .map(
@@ -54,7 +54,7 @@ export function generateNavbar(props: NavbarProps): string {
 
         <!-- Auth Buttons -->
         <div class="nav-auth">
-          <a href="/api/v1/auth/login" class="btn btn-ghost btn-sm nav-login-btn">
+          <a href="/login" class="btn btn-ghost btn-sm nav-login-btn">
             ${icons.arrowRight}
             <span>Login</span>
           </a>
@@ -100,7 +100,7 @@ export function generateNavbar(props: NavbarProps): string {
           <li><a href="/developer" class="nav-link">Developer Portal</a></li>
         </ul>
         <div class="nav-mobile-auth">
-          <a href="/api/v1/auth/login" class="btn btn-outline btn-full">Login</a>
+          <a href="/login" class="btn btn-outline btn-full">Login</a>
           <a href="${ctaHref}" class="btn btn-primary btn-full">${ctaText}</a>
         </div>
       </div>

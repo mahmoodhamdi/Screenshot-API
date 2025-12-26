@@ -111,6 +111,7 @@ export function generateAuthPage(page: AuthPageType, config: AuthPageConfig = {}
   <meta name="title" content="${title}">
   <meta name="description" content="${description}">
   <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="${baseUrl}/${page}">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
@@ -129,7 +130,13 @@ export function generateAuthPage(page: AuthPageType, config: AuthPageConfig = {}
 
   <style>${styles}</style>
 </head>
-<body>
+<body class="page-loading">
+  <!-- Skip link for keyboard navigation -->
+  <a href="#main-form" class="skip-link">Skip to form</a>
+
+  <!-- Screen reader announcements -->
+  <div id="sr-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
   <div class="auth-container">
     <!-- Left Side - Branding -->
     <div class="auth-branding" aria-hidden="true">
@@ -190,7 +197,7 @@ export function generateAuthPage(page: AuthPageType, config: AuthPageConfig = {}
 
     <!-- Right Side - Form -->
     <div class="auth-form-container" role="main">
-      <div class="auth-form-wrapper">
+      <div class="auth-form-wrapper" id="main-form" tabindex="-1">
         ${content}
       </div>
     </div>
@@ -410,6 +417,48 @@ function getBaseStyles(): string {
       padding: 2rem;
       font-style: italic;
     }
+
+    /* Screen reader only */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Page load transition */
+    body.page-loading {
+      opacity: 0;
+    }
+
+    body.page-loaded {
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    /* Skip link for accessibility */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent-primary);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0 0 8px 8px;
+      z-index: 10000;
+      font-weight: 500;
+      transition: top 0.3s ease;
+    }
+
+    .skip-link:focus {
+      top: 0;
+    }
   `;
 }
 
@@ -516,6 +565,59 @@ function getAuthAnimationStyles(): string {
  */
 function getAuthScripts(): string {
   return `
+    // Page load transition
+    document.addEventListener('DOMContentLoaded', function() {
+      document.body.classList.remove('page-loading');
+      document.body.classList.add('page-loaded');
+    });
+
+    // Screen reader announcement
+    function announce(message, priority = 'polite') {
+      const announcer = document.getElementById('sr-announcer');
+      if (announcer) {
+        announcer.setAttribute('aria-live', priority);
+        announcer.textContent = '';
+        // Use setTimeout to ensure the change is detected
+        setTimeout(() => {
+          announcer.textContent = message;
+        }, 100);
+      }
+    }
+
+    // Retry mechanism for API calls
+    async function fetchWithRetry(url, options, maxRetries = 3) {
+      let lastError;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, options);
+          return response;
+        } catch (error) {
+          lastError = error;
+          if (attempt < maxRetries) {
+            // Wait before retry (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 500));
+          }
+        }
+      }
+      throw lastError;
+    }
+
+    // Network error handler
+    function handleNetworkError(error) {
+      console.error('Network error:', error);
+      const isOffline = !navigator.onLine;
+      if (isOffline) {
+        return 'You appear to be offline. Please check your internet connection.';
+      }
+      return 'Unable to connect to the server. Please try again.';
+    }
+
+    // Rate limit handler
+    function handleRateLimitError(retryAfter) {
+      const seconds = retryAfter || 60;
+      return 'Too many requests. Please wait ' + seconds + ' seconds before trying again.';
+    }
+
     // Password visibility toggle
     function togglePasswordVisibility(inputId, button) {
       const input = document.getElementById(inputId);

@@ -1401,12 +1401,14 @@ authPages.forEach((page) => {
         ? 'https://api.screenshot.dev'
         : `http://localhost:${config.server.port}`;
 
-    // Get token from query params for reset-password and verify-email pages
+    // Get token and email from query params for reset-password and verify-email pages
     const token = req.query.token as string | undefined;
+    const email = req.query.email as string | undefined;
 
     const authPage = generateAuthPage(page, {
       baseUrl,
       token,
+      email,
     });
     res.setHeader('Content-Type', 'text/html');
     res.send(authPage);

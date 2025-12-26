@@ -624,6 +624,88 @@ function getBaseStyles(): string {
       font-weight: 600;
     }
 
+    /* Error state */
+    .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    .error-state-icon {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 1.5rem;
+      color: var(--error);
+    }
+
+    .error-state-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .error-state-message {
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      max-width: 400px;
+    }
+
+    .error-state-retry {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Skeleton loader */
+    .skeleton-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .skeleton-row {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .skeleton-item {
+      background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-hover) 50%, var(--bg-tertiary) 75%);
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.5s infinite;
+      border-radius: 6px;
+    }
+
+    .skeleton-text {
+      height: 1rem;
+      width: 100%;
+    }
+
+    .skeleton-text-sm {
+      height: 0.75rem;
+      width: 60%;
+    }
+
+    .skeleton-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+
+    .skeleton-card {
+      height: 120px;
+      border-radius: 12px;
+    }
+
+    @keyframes skeletonShimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
     /* Animations */
     @keyframes fadeIn {
       from { opacity: 0; }
@@ -725,12 +807,48 @@ function getDashboardScripts(): string {
       }
     });
 
-    // Close sidebar on escape
+    // Global keyboard shortcuts
     document.addEventListener('keydown', function(e) {
+      // Escape: Close modals, sidebar, and dropdowns
       if (e.key === 'Escape') {
         closeSidebar();
         const dropdown = document.getElementById('user-dropdown');
         if (dropdown) dropdown.classList.remove('is-open');
+
+        // Close any open modals
+        document.querySelectorAll('.modal.is-open').forEach(modal => {
+          modal.classList.remove('is-open');
+          document.body.style.overflow = '';
+        });
+      }
+
+      // Ctrl/Cmd + K: Focus search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.querySelector('.header-search-input');
+        if (searchInput) {
+          const searchContainer = document.getElementById('header-search');
+          if (searchContainer) searchContainer.style.display = 'flex';
+          searchInput.focus();
+        }
+      }
+
+      // Ctrl/Cmd + N: New screenshot (only on screenshots page)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        const newScreenshotModal = document.getElementById('new-screenshot-modal');
+        if (newScreenshotModal) {
+          e.preventDefault();
+          openNewScreenshotModal();
+        }
+      }
+
+      // Ctrl/Cmd + Shift + N: New API key (only on api-keys page)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
+        const createKeyModal = document.getElementById('create-key-modal');
+        if (createKeyModal) {
+          e.preventDefault();
+          openCreateKeyModal();
+        }
       }
     });
 
@@ -749,6 +867,51 @@ function getDashboardScripts(): string {
         console.error('Sign out error:', error);
         showToast('Failed to sign out', 'error');
       }
+    }
+
+    // Show error state with retry button
+    function showErrorState(containerId, message, retryFn) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      container.innerHTML = \`
+        <div class="error-state">
+          <svg class="error-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v4M12 16h.01"/>
+          </svg>
+          <h3 class="error-state-title">Something went wrong</h3>
+          <p class="error-state-message">\${message || 'Failed to load data. Please try again.'}</p>
+          <button class="btn btn-secondary error-state-retry" onclick="\${retryFn}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M23 4v6h-6M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            Try Again
+          </button>
+        </div>
+      \`;
+    }
+
+    // Generate skeleton loader
+    function showSkeletonLoader(containerId, rows = 5) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      let html = '<div class="skeleton-container">';
+      for (let i = 0; i < rows; i++) {
+        html += \`
+          <div class="skeleton-row">
+            <div class="skeleton-item skeleton-avatar"></div>
+            <div style="flex: 1;">
+              <div class="skeleton-item skeleton-text" style="margin-bottom: 0.5rem;"></div>
+              <div class="skeleton-item skeleton-text-sm"></div>
+            </div>
+          </div>
+        \`;
+      }
+      html += '</div>';
+      container.innerHTML = html;
     }
 
     // Initialize

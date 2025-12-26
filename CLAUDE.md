@@ -227,6 +227,61 @@ src/views/auth/
 
 Each page exports: `generateXxxForm()`, `getXxxStyles()`, `getXxxScripts()`
 
+### Dashboard (`src/views/dashboard/`)
+
+User dashboard with full management capabilities:
+
+```
+src/views/dashboard/
+├── index.ts                  # Main generator with generateDashboardPage(page, config)
+├── layouts/
+│   └── dashboard-layout.ts   # Sidebar + header + content layout
+├── pages/
+│   ├── overview.ts           # Stats, recent activity, quick capture
+│   ├── screenshots.ts        # Screenshots table with filters & modals
+│   ├── screenshot-detail.ts  # Single screenshot view with actions
+│   ├── api-keys.ts           # API key management (create, revoke)
+│   ├── usage.ts              # Analytics with charts (bar, donut, line)
+│   ├── settings.ts           # Profile, security, notifications
+│   └── billing.ts            # Subscription plans, invoices
+└── components/
+    ├── sidebar.ts            # Navigation with plan badge
+    ├── header.ts             # Page title, search, user dropdown
+    ├── stat-card.ts          # Stat display with change indicator
+    ├── data-table.ts         # Sortable table with skeleton loading
+    ├── chart.ts              # CSS-based charts (bar, donut, line)
+    ├── pagination.ts         # Page navigation
+    └── empty-state.ts        # No data placeholder with action
+```
+
+**Dashboard Routes:**
+
+| Route | Description |
+|-------|-------------|
+| `/dashboard` | Overview with stats and quick actions |
+| `/dashboard/screenshots` | Screenshots list with table & filters |
+| `/dashboard/screenshots/:id` | Screenshot detail with preview |
+| `/dashboard/api-keys` | API key management |
+| `/dashboard/usage` | Usage analytics with charts |
+| `/dashboard/settings` | Account settings |
+| `/dashboard/billing` | Subscription & billing |
+
+**Key Features:**
+- Collapsible sidebar (280px desktop, overlay on mobile)
+- Real-time stats with API integration
+- CSS-based charts (no external libraries)
+- Skeleton loaders for async data
+- Toast notifications for actions
+- Modal dialogs for forms
+- Error states with retry buttons
+
+**Keyboard Shortcuts:**
+- `Ctrl/Cmd + K`: Focus search
+- `Ctrl/Cmd + N`: New screenshot (on screenshots page)
+- `Escape`: Close modals/sidebar
+
+Each page exports: `generateXxxPage()`, `getXxxStyles()`, `getXxxScripts()`
+
 ### Design System
 
 Colors:

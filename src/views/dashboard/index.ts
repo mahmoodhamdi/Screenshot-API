@@ -22,6 +22,8 @@ import {
   getScreenshotDetailScripts,
 } from './pages/screenshot-detail';
 import { generateApiKeysPage, getApiKeysStyles, getApiKeysScripts } from './pages/api-keys';
+import { getChartStyles, getChartScripts } from './components/chart';
+import { generateUsagePage, getUsageStyles, getUsageScripts } from './pages/usage';
 
 export type DashboardPageType =
   | 'overview'
@@ -172,7 +174,7 @@ function getPageContent(page: DashboardPageType, config: DashboardPageConfig): s
     case 'api-keys':
       return generateApiKeysPage();
     case 'usage':
-      return getUsagePlaceholder();
+      return generateUsagePage();
     case 'settings':
       return getSettingsPlaceholder();
     case 'billing':
@@ -235,6 +237,11 @@ function getPageStyles(page: DashboardPageType): string {
       return getScreenshotDetailStyles();
     case 'api-keys':
       return getApiKeysStyles();
+    case 'usage':
+      return `
+        ${getChartStyles()}
+        ${getUsageStyles()}
+      `;
     default:
       return placeholderStyles;
   }
@@ -257,6 +264,11 @@ function getPageScripts(page: DashboardPageType): string {
       return getScreenshotDetailScripts();
     case 'api-keys':
       return getApiKeysScripts();
+    case 'usage':
+      return `
+        ${getChartScripts()}
+        ${getUsageScripts()}
+      `;
     default:
       return `
         // ${page} page scripts
@@ -266,20 +278,6 @@ function getPageScripts(page: DashboardPageType): string {
 }
 
 // Placeholder content for pages not yet implemented
-function getUsagePlaceholder(): string {
-  return `
-    <div class="dashboard-placeholder">
-      <svg class="dashboard-placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M18 20V10"/>
-        <path d="M12 20V4"/>
-        <path d="M6 20v-6"/>
-      </svg>
-      <h3 class="dashboard-placeholder-title">Usage & Analytics</h3>
-      <p class="dashboard-placeholder-text">Usage charts and analytics will appear here.</p>
-    </div>
-  `;
-}
-
 function getSettingsPlaceholder(): string {
   return `
     <div class="dashboard-placeholder">

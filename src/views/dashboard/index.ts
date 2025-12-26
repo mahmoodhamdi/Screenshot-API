@@ -21,6 +21,7 @@ import {
   getScreenshotDetailStyles,
   getScreenshotDetailScripts,
 } from './pages/screenshot-detail';
+import { generateApiKeysPage, getApiKeysStyles, getApiKeysScripts } from './pages/api-keys';
 
 export type DashboardPageType =
   | 'overview'
@@ -169,7 +170,7 @@ function getPageContent(page: DashboardPageType, config: DashboardPageConfig): s
     case 'screenshot-detail':
       return generateScreenshotDetailPage();
     case 'api-keys':
-      return getApiKeysPlaceholder();
+      return generateApiKeysPage();
     case 'usage':
       return getUsagePlaceholder();
     case 'settings':
@@ -232,6 +233,8 @@ function getPageStyles(page: DashboardPageType): string {
       `;
     case 'screenshot-detail':
       return getScreenshotDetailStyles();
+    case 'api-keys':
+      return getApiKeysStyles();
     default:
       return placeholderStyles;
   }
@@ -252,6 +255,8 @@ function getPageScripts(page: DashboardPageType): string {
       `;
     case 'screenshot-detail':
       return getScreenshotDetailScripts();
+    case 'api-keys':
+      return getApiKeysScripts();
     default:
       return `
         // ${page} page scripts
@@ -261,18 +266,6 @@ function getPageScripts(page: DashboardPageType): string {
 }
 
 // Placeholder content for pages not yet implemented
-function getApiKeysPlaceholder(): string {
-  return `
-    <div class="dashboard-placeholder">
-      <svg class="dashboard-placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-      </svg>
-      <h3 class="dashboard-placeholder-title">API Keys</h3>
-      <p class="dashboard-placeholder-text">Manage your API keys here.</p>
-    </div>
-  `;
-}
-
 function getUsagePlaceholder(): string {
   return `
     <div class="dashboard-placeholder">

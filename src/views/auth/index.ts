@@ -9,6 +9,21 @@ import { getFormButtonStyles } from './components/form-button';
 import { getAuthCardStyles } from './components/auth-card';
 import { generateLoginForm, getLoginStyles, getLoginScripts } from './pages/login';
 import { generateRegisterForm, getRegisterStyles, getRegisterScripts } from './pages/register';
+import {
+  generateForgotPasswordForm,
+  getForgotPasswordStyles,
+  getForgotPasswordScripts,
+} from './pages/forgot-password';
+import {
+  generateResetPasswordForm,
+  getResetPasswordStyles,
+  getResetPasswordScripts,
+} from './pages/reset-password';
+import {
+  generateVerifyEmailForm,
+  getVerifyEmailStyles,
+  getVerifyEmailScripts,
+} from './pages/verify-email';
 
 export type AuthPageType =
   | 'login'
@@ -22,6 +37,7 @@ export interface AuthPageConfig {
   description?: string;
   baseUrl?: string;
   token?: string;
+  email?: string;
 }
 
 interface PageMeta {
@@ -194,6 +210,16 @@ function getPageContent(page: AuthPageType, config: AuthPageConfig): string {
       return generateLoginForm({ baseUrl: config.baseUrl });
     case 'register':
       return generateRegisterForm({ baseUrl: config.baseUrl });
+    case 'forgot-password':
+      return generateForgotPasswordForm({ baseUrl: config.baseUrl });
+    case 'reset-password':
+      return generateResetPasswordForm({ baseUrl: config.baseUrl, token: config.token });
+    case 'verify-email':
+      return generateVerifyEmailForm({
+        baseUrl: config.baseUrl,
+        token: config.token,
+        email: config.email,
+      });
     default:
       return getPagePlaceholder(page, PAGE_META[page]);
   }
@@ -208,6 +234,12 @@ function getPageStyles(page: AuthPageType): string {
       return getLoginStyles();
     case 'register':
       return getRegisterStyles();
+    case 'forgot-password':
+      return getForgotPasswordStyles();
+    case 'reset-password':
+      return getResetPasswordStyles();
+    case 'verify-email':
+      return getVerifyEmailStyles();
     default:
       return '';
   }
@@ -222,6 +254,12 @@ function getPageScripts(page: AuthPageType): string {
       return getLoginScripts();
     case 'register':
       return getRegisterScripts();
+    case 'forgot-password':
+      return getForgotPasswordScripts();
+    case 'reset-password':
+      return getResetPasswordScripts();
+    case 'verify-email':
+      return getVerifyEmailScripts();
     default:
       return '';
   }

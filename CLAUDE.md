@@ -172,39 +172,60 @@ The `/developer` endpoint provides:
 - Downloadable API collections for Postman, Insomnia, and Bruno
 - Syntax highlighted code with copy-to-clipboard functionality
 
-## Landing Page
+## Views Architecture
 
-The root route (`/`) serves a professional SaaS landing page built with TypeScript template generators.
+The `src/views/` directory contains TypeScript template generators for server-rendered HTML pages.
 
-### Landing Page Structure
+### Landing Page (`src/views/landing/`)
+
+The root route (`/`) serves a professional SaaS landing page:
 
 ```
 src/views/landing/
 ├── index.ts              # Main page generator with styles
-├── sections/
-│   ├── hero.ts           # Hero section with CTA
-│   ├── features.ts       # Feature cards and detailed features
-│   ├── code-demo.ts      # Interactive code examples
-│   ├── pricing.ts        # Pricing plans with toggle
-│   ├── testimonials.ts   # Stats, reviews, company logos
-│   ├── cta.ts            # Call-to-action section
-│   └── footer.ts         # Footer with newsletter
-└── components/
-    ├── navbar.ts         # Responsive navigation
-    ├── button.ts         # Button component
-    ├── card.ts           # Card component
-    └── icons.ts          # SVG icon library
+├── sections/             # Page sections (hero, features, pricing, etc.)
+└── components/           # Reusable components (navbar, button, card, icons)
 ```
 
-### Key Features
+### Auth Pages (`src/views/auth/`)
 
-- **Dark Theme**: Professional indigo/purple gradient design
-- **Responsive**: Mobile-first with breakpoints at 375px, 640px, 768px, 1024px
-- **Touch Optimized**: 44px minimum touch targets, swipe gestures
-- **Accessible**: Skip links, ARIA labels, keyboard navigation, focus states
-- **SEO Ready**: Meta tags, Open Graph, Twitter Cards, JSON-LD structured data
-- **Animations**: Scroll reveals, hover effects, respects prefers-reduced-motion
-- **Performance**: Preconnect hints, lazy loading, optimized CSS
+Authentication pages with a split-screen design (branding left, form right):
+
+```
+src/views/auth/
+├── index.ts              # Main generator with generateAuthPage(page, config)
+├── pages/
+│   ├── login.ts          # Login with email/password, remember me
+│   ├── register.ts       # Registration with password strength indicator
+│   ├── forgot-password.ts # Request password reset (2 states)
+│   ├── reset-password.ts  # Reset password with token (4 states)
+│   └── verify-email.ts    # Email verification (5 states)
+└── components/
+    ├── auth-layout.ts    # Split-screen layout
+    ├── form-input.ts     # Input with icon, validation, password toggle
+    ├── form-button.ts    # Primary/secondary buttons with loading state
+    └── auth-card.ts      # Glassmorphism card wrapper
+```
+
+**Auth Routes:**
+
+| Route | Description |
+|-------|-------------|
+| `/login` | Sign in form with email/password |
+| `/register` | Create account with password strength |
+| `/forgot-password` | Request password reset email |
+| `/reset-password?token=xxx` | Set new password with token |
+| `/verify-email?token=xxx` | Verify email address |
+
+**Features:**
+- Client-side form validation with inline errors
+- Password strength indicator (weak/medium/strong)
+- Multi-state pages with smooth transitions
+- Screen reader announcements for accessibility
+- Retry mechanism for API calls (exponential backoff)
+- Rate limit handling with user feedback
+
+Each page exports: `generateXxxForm()`, `getXxxStyles()`, `getXxxScripts()`
 
 ### Design System
 
@@ -214,9 +235,9 @@ Colors:
 - Accent secondary: `#8b5cf6` (Purple)
 - Success: `#10b981`
 
-Typography:
-- Sans: Inter
-- Mono: JetBrains Mono
+Typography: Inter (sans), JetBrains Mono (mono)
+
+Features: Dark theme, responsive (375px, 640px, 768px, 1024px breakpoints), accessible, SEO-ready
 
 ## Key Implementation Details
 
@@ -226,4 +247,3 @@ Typography:
 - **Storage Fallback**: If AWS S3 is not configured, screenshots are stored locally in `./uploads`
 - **Code Generator**: `src/utils/docs/code-generator.ts` generates code snippets for all supported languages
 - **Collection Generator**: `src/utils/docs/collection-generator.ts` generates Postman/Insomnia/Bruno collections
-- **Landing Page**: `src/views/landing/index.ts` generates the marketing landing page

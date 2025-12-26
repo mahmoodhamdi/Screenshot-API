@@ -6,6 +6,8 @@
 import { generateDashboardLayout, getDashboardLayoutStyles } from './layouts/dashboard-layout';
 import { getSidebarStyles } from './components/sidebar';
 import { getHeaderStyles } from './components/header';
+import { getStatCardStyles } from './components/stat-card';
+import { generateOverviewPage, getOverviewStyles, getOverviewScripts } from './pages/overview';
 
 export type DashboardPageType =
   | 'overview'
@@ -146,10 +148,9 @@ export function generateDashboardPage(
  * Get page-specific content
  */
 function getPageContent(page: DashboardPageType, config: DashboardPageConfig): string {
-  // Page content will be implemented in subsequent phases
   switch (page) {
     case 'overview':
-      return getOverviewPlaceholder(config);
+      return generateOverviewPage(config);
     case 'screenshots':
       return getScreenshotsPlaceholder();
     case 'screenshot-detail':
@@ -163,7 +164,7 @@ function getPageContent(page: DashboardPageType, config: DashboardPageConfig): s
     case 'billing':
       return getBillingPlaceholder();
     default:
-      return getOverviewPlaceholder(config);
+      return generateOverviewPage(config);
   }
 }
 
@@ -171,9 +172,8 @@ function getPageContent(page: DashboardPageType, config: DashboardPageConfig): s
  * Get page-specific styles
  */
 function getPageStyles(page: DashboardPageType): string {
-  // Page-specific styles will be added in subsequent phases
-  return `
-    /* ${page} page styles */
+  // Common placeholder styles for pages not yet implemented
+  const placeholderStyles = `
     .dashboard-placeholder {
       display: flex;
       flex-direction: column;
@@ -203,38 +203,34 @@ function getPageStyles(page: DashboardPageType): string {
       margin-bottom: 1.5rem;
     }
   `;
+
+  switch (page) {
+    case 'overview':
+      return `
+        ${getStatCardStyles()}
+        ${getOverviewStyles()}
+      `;
+    default:
+      return placeholderStyles;
+  }
 }
 
 /**
  * Get page-specific scripts
  */
 function getPageScripts(page: DashboardPageType): string {
-  // Page-specific scripts will be added in subsequent phases
-  return `
-    // ${page} page scripts
-    console.log('Dashboard page loaded: ${page}');
-  `;
+  switch (page) {
+    case 'overview':
+      return getOverviewScripts();
+    default:
+      return `
+        // ${page} page scripts
+        console.log('Dashboard page loaded: ${page}');
+      `;
+  }
 }
 
-// Placeholder content for each page (will be replaced in subsequent phases)
-function getOverviewPlaceholder(config: DashboardPageConfig): string {
-  return `
-    <div class="dashboard-welcome">
-      <h2>Welcome back, ${config.user.name.split(' ')[0]}!</h2>
-      <p class="dashboard-date">${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-    </div>
-    <div class="dashboard-placeholder">
-      <svg class="dashboard-placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <path d="M3 9h18"/>
-        <path d="M9 21V9"/>
-      </svg>
-      <h3 class="dashboard-placeholder-title">Overview Coming Soon</h3>
-      <p class="dashboard-placeholder-text">Stats, charts, and recent activity will appear here.</p>
-    </div>
-  `;
-}
-
+// Placeholder content for pages not yet implemented
 function getScreenshotsPlaceholder(): string {
   return `
     <div class="dashboard-placeholder">

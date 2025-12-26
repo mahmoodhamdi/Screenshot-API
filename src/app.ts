@@ -26,6 +26,7 @@ import {
 import { getAllExamples } from '@utils/docs/code-generator';
 import { generateLandingPage } from './views/landing';
 import { generateAuthPage, AuthPageType } from './views/auth';
+import { generateDashboardPage, DashboardPageType } from './views/dashboard';
 
 // ============================================
 // Create Express App
@@ -1413,6 +1414,51 @@ authPages.forEach((page) => {
     res.setHeader('Content-Type', 'text/html');
     res.send(authPage);
   });
+});
+
+// ============================================
+// Dashboard Pages
+// ============================================
+
+// Dashboard page type to route mapping
+const dashboardRoutes: Array<{ path: string; page: DashboardPageType }> = [
+  { path: '/dashboard', page: 'overview' },
+  { path: '/dashboard/screenshots', page: 'screenshots' },
+  { path: '/dashboard/api-keys', page: 'api-keys' },
+  { path: '/dashboard/usage', page: 'usage' },
+  { path: '/dashboard/settings', page: 'settings' },
+  { path: '/dashboard/billing', page: 'billing' },
+];
+
+// TODO: Replace with actual authentication and user data
+function getMockUser(): { id: string; name: string; email: string; plan: 'free' } {
+  return {
+    id: 'user_123',
+    name: 'John Doe',
+    email: 'john@example.com',
+    plan: 'free',
+  };
+}
+
+dashboardRoutes.forEach(({ path, page }) => {
+  app.get(path, (_req: Request, res: Response) => {
+    // TODO: Add authentication check - redirect to /login if not authenticated
+    const user = getMockUser();
+
+    const dashboardPage = generateDashboardPage(page, { user });
+    res.setHeader('Content-Type', 'text/html');
+    res.send(dashboardPage);
+  });
+});
+
+// Screenshot detail page (dynamic route)
+app.get('/dashboard/screenshots/:id', (_req: Request, res: Response) => {
+  // TODO: Add authentication check - redirect to /login if not authenticated
+  const user = getMockUser();
+
+  const dashboardPage = generateDashboardPage('screenshot-detail', { user });
+  res.setHeader('Content-Type', 'text/html');
+  res.send(dashboardPage);
 });
 
 // ============================================

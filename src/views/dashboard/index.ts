@@ -16,6 +16,11 @@ import {
   getScreenshotsStyles,
   getScreenshotsScripts,
 } from './pages/screenshots';
+import {
+  generateScreenshotDetailPage,
+  getScreenshotDetailStyles,
+  getScreenshotDetailScripts,
+} from './pages/screenshot-detail';
 
 export type DashboardPageType =
   | 'overview'
@@ -162,7 +167,7 @@ function getPageContent(page: DashboardPageType, config: DashboardPageConfig): s
     case 'screenshots':
       return generateScreenshotsPage();
     case 'screenshot-detail':
-      return getScreenshotDetailPlaceholder();
+      return generateScreenshotDetailPage();
     case 'api-keys':
       return getApiKeysPlaceholder();
     case 'usage':
@@ -225,6 +230,8 @@ function getPageStyles(page: DashboardPageType): string {
         ${getEmptyStateStyles()}
         ${getScreenshotsStyles()}
       `;
+    case 'screenshot-detail':
+      return getScreenshotDetailStyles();
     default:
       return placeholderStyles;
   }
@@ -243,6 +250,8 @@ function getPageScripts(page: DashboardPageType): string {
         ${getPaginationScripts()}
         ${getScreenshotsScripts()}
       `;
+    case 'screenshot-detail':
+      return getScreenshotDetailScripts();
     default:
       return `
         // ${page} page scripts
@@ -252,20 +261,6 @@ function getPageScripts(page: DashboardPageType): string {
 }
 
 // Placeholder content for pages not yet implemented
-function getScreenshotDetailPlaceholder(): string {
-  return `
-    <div class="dashboard-placeholder">
-      <svg class="dashboard-placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <path d="M21 15l-5-5L5 21"/>
-      </svg>
-      <h3 class="dashboard-placeholder-title">Screenshot Details</h3>
-      <p class="dashboard-placeholder-text">Screenshot preview and details will appear here.</p>
-    </div>
-  `;
-}
-
 function getApiKeysPlaceholder(): string {
   return `
     <div class="dashboard-placeholder">

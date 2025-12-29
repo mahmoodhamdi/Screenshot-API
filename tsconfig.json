@@ -31,7 +31,8 @@
       "@middlewares/*": ["middlewares/*"],
       "@routes/*": ["routes/*"],
       "@utils/*": ["utils/*"],
-      "@types/*": ["types/*"]
+      "@types/*": ["types/*"],
+      "@queues/*": ["queues/*"]
     }
   },
   "include": ["src/**/*"],

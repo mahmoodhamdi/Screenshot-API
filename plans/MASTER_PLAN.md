@@ -14,13 +14,13 @@ This document outlines a comprehensive review and production-readiness plan for 
 | Phase | Focus | Status | Progress |
 |-------|-------|--------|----------|
 | [Phase 1](#phase-1-security--critical-fixes) | Security & Critical Fixes | COMPLETED | 5/5 |
-| [Phase 2](#phase-2-complete-missing-implementations) | Complete Missing Implementations | NOT_STARTED | 0/4 |
+| [Phase 2](#phase-2-complete-missing-implementations) | Complete Missing Implementations | IN_PROGRESS | 2/4 |
 | [Phase 3](#phase-3-testing--quality) | Testing & Quality | NOT_STARTED | 0/5 |
 | [Phase 4](#phase-4-performance-optimization) | Performance Optimization | NOT_STARTED | 0/4 |
 | [Phase 5](#phase-5-polish--production-ready) | Polish & Production Ready | NOT_STARTED | 0/3 |
 
 **Total Milestones:** 21
-**Completed:** 5/21
+**Completed:** 7/21
 
 ---
 
@@ -45,11 +45,12 @@ This document outlines a comprehensive review and production-readiness plan for 
 ### Services Implementation
 | Service | Status | Gaps |
 |---------|--------|------|
-| Auth | 95% | Password reset token not persisted |
+| Auth | 100% | None (password reset fixed in M2.1) |
 | Screenshot | 100% | None |
-| Subscription | 95% | Payment failure email notification |
+| Subscription | 100% | None (payment failure email added in M2.2) |
 | Storage | 100% | None |
 | Analytics | 100% | None |
+| Email | 100% | None (implemented in M2.2) |
 
 ### Critical Issues Found
 
@@ -147,27 +148,30 @@ This document outlines a comprehensive review and production-readiness plan for 
 **Priority:** HIGH
 **Estimated Milestones:** 4
 
-### Milestone 2.1: Password Reset Flow
+### Milestone 2.1: Password Reset Flow ✅
 - **Prompt File:** `plans/phase2-features/M2.1-password-reset.md`
-- **Status:** NOT_STARTED
+- **Status:** COMPLETED
+- **Completed Date:** 2025-12-29
+- **Commit:** `03a94a4`
 - **Checklist:**
-  - [ ] Add resetToken and resetTokenExpiry to User model
-  - [ ] Implement token persistence in auth.service.ts
-  - [ ] Create reset password endpoint
-  - [ ] Add token validation with expiry
-  - [ ] Handle multiple reset requests
-  - [ ] Write tests
+  - [x] Add resetToken and resetTokenExpiry to User model
+  - [x] Implement token persistence in auth.service.ts
+  - [x] Create reset password endpoint
+  - [x] Add token validation with expiry
+  - [x] Handle multiple reset requests
+  - [x] Write tests (17 unit + 15 integration)
 
-### Milestone 2.2: Email Service
+### Milestone 2.2: Email Service ✅
 - **Prompt File:** `plans/phase2-features/M2.2-email-service.md`
-- **Status:** NOT_STARTED
+- **Status:** COMPLETED
+- **Completed Date:** 2025-12-29
 - **Checklist:**
-  - [ ] Create email.service.ts
-  - [ ] Implement email templates (password reset, verification, payment)
-  - [ ] Add Bull queue for email delivery
-  - [ ] Implement retry logic
-  - [ ] Add email for payment failures
-  - [ ] Write tests with nodemailer mock
+  - [x] Create email.service.ts
+  - [x] Implement email templates (password reset, verification, payment, welcome, etc.)
+  - [x] Add Bull queue for email delivery with retry logic
+  - [x] Integrate with auth service (welcome, verification, password reset)
+  - [x] Integrate with subscription service (payment failed, subscription changed)
+  - [x] Write tests (36 new tests - 22 service + 14 queue)
 
 ### Milestone 2.3: Webhook Security
 - **Prompt File:** `plans/phase2-features/M2.3-webhook-security.md`
@@ -373,8 +377,8 @@ Each prompt file contains:
 ## Progress Tracking
 
 ### Last Updated: 2025-12-29
-### Current Phase: Phase 1 - Security & Critical Fixes (COMPLETED)
-### Current Milestone: M1.5 Completed - Phase 1 Complete!
+### Current Phase: Phase 2 - Complete Missing Implementations (IN_PROGRESS)
+### Current Milestone: M2.2 Completed
 ### Blockers: None
 
 ### Session Log
@@ -385,6 +389,8 @@ Each prompt file contains:
 | 2025-12-29 | 3 | M1.3 Auth Security | COMPLETED | Account lockout, IP reputation, Redis concurrent limiter |
 | 2025-12-29 | 4 | M1.4 CSP & Security Headers | COMPLETED | Nonce-based CSP, separate policies for API/docs |
 | 2025-12-29 | 5 | M1.5 Redis Failsafe | COMPLETED | Circuit breaker, in-memory fallback, health monitoring |
+| 2025-12-29 | 6 | M2.1 Password Reset | COMPLETED | Token persistence, validation, session invalidation |
+| 2025-12-29 | 7 | M2.2 Email Service | COMPLETED | Bull queue, 8 email types, auth/subscription integration |
 
 ---
 

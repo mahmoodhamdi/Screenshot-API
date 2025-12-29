@@ -22,6 +22,8 @@ export {
   comparePassword,
   changePassword,
   generatePasswordResetToken,
+  validatePasswordResetToken,
+  resetPassword,
   generateVerificationToken,
   verifyEmail,
 } from './auth.service';
@@ -101,3 +103,6 @@ export {
   clearReputation,
   getReputationInfo,
 } from './ipReputation.service';
+
+// Email Service
+export { emailService, EmailService, EmailOptions, EmailResult } from './email.service';

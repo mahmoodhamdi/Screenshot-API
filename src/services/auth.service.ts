@@ -15,6 +15,7 @@ import { cache, invalidateCache } from '@config/redis';
 import logger from '@utils/logger';
 import { loginAttemptsService } from './loginAttempts.service';
 import { ipReputationService } from './ipReputation.service';
+import { queueEmail } from '@queues/email.queue';
 
 // ============================================
 // Types
@@ -186,6 +187,18 @@ export async function registerUser(data: {
 
   // Store refresh token
   await storeRefreshToken(user._id, tokens.refreshToken);
+
+  // Queue welcome email
+  try {
+    await queueEmail.welcome(user.email, user.name);
+    logger.debug('Welcome email queued', { userId: user._id });
+  } catch (error) {
+    // Don't fail registration if email queueing fails
+    logger.error('Failed to queue welcome email', {
+      userId: user._id,
+      error: (error as Error).message,
+    });
+  }
 
   logger.info('User registered', { userId: user._id, email: user.email });
 
@@ -620,6 +633,18 @@ export async function generatePasswordResetToken(
   user.passwordResetExpires = expires;
   await user.save();
 
+  // Queue password reset email
+  try {
+    await queueEmail.passwordReset(user.email, token);
+    logger.debug('Password reset email queued', { userId: user._id });
+  } catch (error) {
+    // Log but don't fail - the token is still generated
+    logger.error('Failed to queue password reset email', {
+      userId: user._id,
+      error: (error as Error).message,
+    });
+  }
+
   logger.info('Password reset token generated', { userId: user._id });
 
   // Return unhashed token (to send in email)
@@ -715,6 +740,18 @@ export async function generateVerificationToken(userId: Types.ObjectId): Promise
   const token = crypto.randomBytes(32).toString('hex');
   user.verificationToken = crypto.createHash('sha256').update(token).digest('hex');
   await user.save();
+
+  // Queue verification email
+  try {
+    await queueEmail.verification(user.email, token);
+    logger.debug('Verification email queued', { userId: user._id });
+  } catch (error) {
+    // Log but don't fail
+    logger.error('Failed to queue verification email', {
+      userId: user._id,
+      error: (error as Error).message,
+    });
+  }
 
   logger.info('Verification token generated', { userId });
 

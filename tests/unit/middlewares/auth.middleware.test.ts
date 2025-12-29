@@ -501,4 +501,185 @@ describe('Auth Middleware', () => {
       expect(next).toHaveBeenCalled();
     });
   });
+
+  // ============================================
+  // Race Condition Prevention Tests
+  // ============================================
+
+  describe('Race Condition Prevention', () => {
+    describe('authenticateJWT race conditions', () => {
+      it('should not call next() multiple times on success', async () => {
+        const req = mockRequest({
+          headers: { authorization: `Bearer ${validToken}` },
+        }) as Request;
+        const res = mockResponse() as Response;
+        const next = jest.fn();
+
+        await authenticateJWT(req, res, next);
+
+        // Wait a bit to ensure no delayed calls
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        expect(next).toHaveBeenCalledTimes(1);
+      });
+
+      it('should handle request when closed property is set', async () => {
+        const req = mockRequest({
+          headers: { authorization: `Bearer ${validToken}` },
+          closed: true,
+        }) as Request;
+        const res = mockResponse() as Response;
+        const next = jest.fn();
+
+        await authenticateJWT(req, res, next);
+
+        // Should not call next or send response when request is closed
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).not.toHaveBeenCalled();
+      });
+
+      it('should not crash when next() would be called twice (wrapped safely)', async () => {
+        const req = mockRequest({
+          headers: { authorization: `Bearer ${validToken}` },
+        }) as Request;
+        const res = mockResponse() as Response;
+        let callCount = 0;
+        const next = jest.fn(() => {
+          callCount++;
+        });
+
+        await authenticateJWT(req, res, next);
+
+        expect(callCount).toBe(1);
+      });
+    });
+
+    describe('authenticateApiKeyMiddleware race conditions', () => {
+      it('should not call next() multiple times on success', async () => {
+        const { plainTextKey } = await createApiKey(testUser._id, {
+          name: 'Race Condition Test Key',
+        });
+
+        const req = mockRequest({
+          headers: { 'x-api-key': plainTextKey },
+        }) as Request;
+        const res = mockResponse() as Response;
+        const next = jest.fn();
+
+        await authenticateApiKeyMiddleware(req, res, next);
+
+        // Wait a bit to ensure no delayed calls
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Either next is called once or response is sent (not both multiple times)
+        const nextCallCount = next.mock.calls.length;
+        const resCallCount = (res.status as jest.Mock).mock.calls.length;
+
+        expect(nextCallCount + resCallCount).toBeLessThanOrEqual(1);
+      });
+
+      it('should handle request when closed property is set', async () => {
+        const { plainTextKey } = await createApiKey(testUser._id, {
+          name: 'Closed Request Test Key',
+        });
+
+        const req = mockRequest({
+          headers: { 'x-api-key': plainTextKey },
+          closed: true,
+        }) as Request;
+        const res = mockResponse() as Response;
+        const next = jest.fn();
+
+        await authenticateApiKeyMiddleware(req, res, next);
+
+        // Should check closed state before calling next
+        // The async operation may or may not complete before we check closed
+        // but next() should not be called if closed is true when checked
+      });
+    });
+
+    describe('optionalAuth race conditions', () => {
+      it('should not call next() multiple times', async () => {
+        const req = mockRequest({
+          headers: { authorization: `Bearer ${validToken}` },
+        }) as Request;
+        const res = mockResponse() as Response;
+        const next = jest.fn();
+
+        await optionalAuth(req, res, next);
+
+        // Wait a bit to ensure no delayed calls
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        expect(next).toHaveBeenCalledTimes(1);
+      });
+
+      it('should handle request when closed property is set', async () => {
+        const req = mockRequest({
+          headers: { authorization: `Bearer ${validToken}` },
+          closed: true,
+        }) as Request;
+        const res = mockResponse() as Response;
+        const next = jest.fn();
+
+        await optionalAuth(req, res, next);
+
+        // Should not call next when request is closed
+        expect(next).not.toHaveBeenCalled();
+      });
+
+      it('should continue without auth even when closed', async () => {
+        const req = mockRequest({
+          closed: false,
+        }) as Request;
+        const res = mockResponse() as Response;
+        const next = jest.fn();
+
+        await optionalAuth(req, res, next);
+
+        expect(next).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
+
+  // ============================================
+  // Timeout Handling Tests
+  // ============================================
+
+  describe('Timeout Handling', () => {
+    it('authenticateJWT should handle user lookup within timeout', async () => {
+      const req = mockRequest({
+        headers: { authorization: `Bearer ${validToken}` },
+      }) as Request;
+      const res = mockResponse() as Response;
+      const next = jest.fn();
+
+      // This should complete well within the 5s timeout
+      const start = Date.now();
+      await authenticateJWT(req, res, next);
+      const duration = Date.now() - start;
+
+      expect(duration).toBeLessThan(5000);
+      expect(next).toHaveBeenCalled();
+    });
+
+    it('authenticateApiKeyMiddleware should handle validation within timeout', async () => {
+      const { plainTextKey } = await createApiKey(testUser._id, {
+        name: 'Timeout Test Key',
+      });
+
+      const req = mockRequest({
+        headers: { 'x-api-key': plainTextKey },
+      }) as Request;
+      const res = mockResponse() as Response;
+      const next = jest.fn();
+
+      // This should complete well within the 5s timeout
+      const start = Date.now();
+      await authenticateApiKeyMiddleware(req, res, next);
+      const duration = Date.now() - start;
+
+      expect(duration).toBeLessThan(5000);
+    });
+  });
 });

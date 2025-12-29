@@ -111,11 +111,18 @@ const webhookAttemptSchema = new Schema<IWebhookAttempt>(
 // Compound index for finding pending webhooks to process
 webhookAttemptSchema.index({ status: 1, nextAttemptAt: 1 });
 
-// Index for cleanup of old attempts
-webhookAttemptSchema.index({ createdAt: 1 });
-
 // Index for user's webhook history
 webhookAttemptSchema.index({ userId: 1, createdAt: -1 });
+
+// TTL index for automatic cleanup of old webhook attempts (30 days)
+// Only deletes completed/failed/expired attempts
+webhookAttemptSchema.index(
+  { createdAt: 1 },
+  {
+    expireAfterSeconds: 2592000, // 30 days
+    partialFilterExpression: { status: { $in: ['success', 'failed', 'expired'] } },
+  }
+);
 
 // ============================================
 // Static Methods

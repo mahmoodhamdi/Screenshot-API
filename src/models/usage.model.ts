@@ -25,7 +25,7 @@ const usageSchema = new Schema<IUsage>(
     date: {
       type: Date,
       required: true,
-      index: true,
+      // Note: indexed via TTL index below
     },
     screenshots: {
       total: { type: Number, default: 0, min: 0 },
@@ -83,7 +83,12 @@ const usageSchema = new Schema<IUsage>(
 // Compound index for efficient user + date queries
 usageSchema.index({ user: 1, date: 1 }, { unique: true });
 usageSchema.index({ user: 1, apiKey: 1, date: 1 });
-// Note: date field already has index: true in schema definition
+
+// Index for API key specific queries
+usageSchema.index({ apiKey: 1, date: -1 });
+
+// TTL index for automatic cleanup of old usage records (90 days)
+usageSchema.index({ date: 1 }, { expireAfterSeconds: 7776000 });
 
 // ============================================
 // Virtual Fields

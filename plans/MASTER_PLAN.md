@@ -13,14 +13,14 @@ This document outlines a comprehensive review and production-readiness plan for 
 
 | Phase | Focus | Status | Progress |
 |-------|-------|--------|----------|
-| [Phase 1](#phase-1-security--critical-fixes) | Security & Critical Fixes | IN_PROGRESS | 3/5 |
+| [Phase 1](#phase-1-security--critical-fixes) | Security & Critical Fixes | COMPLETED | 5/5 |
 | [Phase 2](#phase-2-complete-missing-implementations) | Complete Missing Implementations | NOT_STARTED | 0/4 |
 | [Phase 3](#phase-3-testing--quality) | Testing & Quality | NOT_STARTED | 0/5 |
 | [Phase 4](#phase-4-performance-optimization) | Performance Optimization | NOT_STARTED | 0/4 |
 | [Phase 5](#phase-5-polish--production-ready) | Polish & Production Ready | NOT_STARTED | 0/3 |
 
 **Total Milestones:** 21
-**Completed:** 3/21
+**Completed:** 5/21
 
 ---
 
@@ -58,8 +58,8 @@ This document outlines a comprehensive review and production-readiness plan for 
 2. ~~**Race Condition in JWT Middleware** - Async flow issue~~ ✅ Fixed in M1.2
 3. ~~**Weak Auth Rate Limiting** - Only 5 req/min, no lockout~~ ✅ Fixed in M1.3
 4. ~~**Concurrent Limiter In-Memory** - Not distributed~~ ✅ Fixed in M1.3
-5. **Unsafe CSP Directives** - unsafe-inline/unsafe-eval
-6. **Redis Failure = No Limits** - Pass-through on Redis down
+5. ~~**Unsafe CSP Directives** - unsafe-inline/unsafe-eval~~ ✅ Fixed in M1.4
+6. ~~**Redis Failure = No Limits** - Pass-through on Redis down~~ ✅ Fixed in M1.5
 
 #### Missing Implementations
 1. Password reset token persistence
@@ -128,15 +128,17 @@ This document outlines a comprehensive review and production-readiness plan for 
   - [x] Add additional security headers
   - [x] Test all endpoints (53 unit + 51 integration tests)
 
-### Milestone 1.5: Redis Failure Handling
+### Milestone 1.5: Redis Failure Handling ✅
 - **Prompt File:** `plans/phase1-security/M1.5-redis-failsafe.md`
-- **Status:** NOT_STARTED
+- **Status:** COMPLETED
+- **Completed Date:** 2025-12-29
+- **Commit:** `89d4aef`
 - **Checklist:**
-  - [ ] Implement circuit breaker for Redis
-  - [ ] Add fallback rate limiting (in-memory)
-  - [ ] Add health check for Redis
-  - [ ] Alert on Redis failures
-  - [ ] Write tests
+  - [x] Implement circuit breaker for Redis
+  - [x] Add fallback rate limiting (in-memory)
+  - [x] Add health check for Redis
+  - [x] Alert on Redis failures
+  - [x] Write tests (70 unit + 21 integration tests)
 
 ---
 
@@ -371,8 +373,8 @@ Each prompt file contains:
 ## Progress Tracking
 
 ### Last Updated: 2025-12-29
-### Current Phase: Phase 1 - Security & Critical Fixes
-### Current Milestone: M1.3 Completed
+### Current Phase: Phase 1 - Security & Critical Fixes (COMPLETED)
+### Current Milestone: M1.5 Completed - Phase 1 Complete!
 ### Blockers: None
 
 ### Session Log
@@ -381,6 +383,8 @@ Each prompt file contains:
 | 2025-12-29 | 1 | M1.1 CSRF Protection | COMPLETED | Custom Double Submit Cookie pattern |
 | 2025-12-29 | 2 | M1.2 JWT Race Condition | COMPLETED | Safe next() wrapper, timeout handling |
 | 2025-12-29 | 3 | M1.3 Auth Security | COMPLETED | Account lockout, IP reputation, Redis concurrent limiter |
+| 2025-12-29 | 4 | M1.4 CSP & Security Headers | COMPLETED | Nonce-based CSP, separate policies for API/docs |
+| 2025-12-29 | 5 | M1.5 Redis Failsafe | COMPLETED | Circuit breaker, in-memory fallback, health monitoring |
 
 ---
 

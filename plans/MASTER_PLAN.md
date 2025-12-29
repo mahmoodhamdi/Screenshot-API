@@ -13,14 +13,14 @@ This document outlines a comprehensive review and production-readiness plan for 
 
 | Phase | Focus | Status | Progress |
 |-------|-------|--------|----------|
-| [Phase 1](#phase-1-security--critical-fixes) | Security & Critical Fixes | IN_PROGRESS | 2/5 |
+| [Phase 1](#phase-1-security--critical-fixes) | Security & Critical Fixes | IN_PROGRESS | 3/5 |
 | [Phase 2](#phase-2-complete-missing-implementations) | Complete Missing Implementations | NOT_STARTED | 0/4 |
 | [Phase 3](#phase-3-testing--quality) | Testing & Quality | NOT_STARTED | 0/5 |
 | [Phase 4](#phase-4-performance-optimization) | Performance Optimization | NOT_STARTED | 0/4 |
 | [Phase 5](#phase-5-polish--production-ready) | Polish & Production Ready | NOT_STARTED | 0/3 |
 
 **Total Milestones:** 21
-**Completed:** 2/21
+**Completed:** 3/21
 
 ---
 
@@ -56,8 +56,8 @@ This document outlines a comprehensive review and production-readiness plan for 
 #### Security Issues (High Priority)
 1. ~~**No CSRF Protection** - Missing csrf middleware~~ ✅ Fixed in M1.1
 2. ~~**Race Condition in JWT Middleware** - Async flow issue~~ ✅ Fixed in M1.2
-3. **Weak Auth Rate Limiting** - Only 5 req/min, no lockout
-4. **Concurrent Limiter In-Memory** - Not distributed
+3. ~~**Weak Auth Rate Limiting** - Only 5 req/min, no lockout~~ ✅ Fixed in M1.3
+4. ~~**Concurrent Limiter In-Memory** - Not distributed~~ ✅ Fixed in M1.3
 5. **Unsafe CSP Directives** - unsafe-inline/unsafe-eval
 6. **Redis Failure = No Limits** - Pass-through on Redis down
 
@@ -105,16 +105,17 @@ This document outlines a comprehensive review and production-readiness plan for 
   - [x] Write unit tests for edge cases (10 new tests)
   - [x] Test concurrent requests - all 471 tests pass
 
-### Milestone 1.3: Enhance Auth Security
+### Milestone 1.3: Enhance Auth Security ✅
 - **Prompt File:** `plans/phase1-security/M1.3-auth-security.md`
-- **Status:** NOT_STARTED
+- **Status:** COMPLETED
+- **Completed Date:** 2025-12-29
 - **Checklist:**
-  - [ ] Implement account lockout after failed attempts
-  - [ ] Increase auth rate limits
-  - [ ] Add exponential backoff
-  - [ ] Move concurrent limiter to Redis
-  - [ ] Add IP-based brute force detection
-  - [ ] Write tests
+  - [x] Implement account lockout after failed attempts (5 attempts, 15 min lockout)
+  - [x] Adaptive rate limiting (stricter for suspicious IPs)
+  - [x] Move concurrent limiter to Redis (distributed)
+  - [x] Add IP reputation tracking (marks IPs as suspicious after 3 lockouts)
+  - [x] Write unit tests (45 new tests for login attempts, IP reputation)
+  - [x] Write integration tests
 
 ### Milestone 1.4: Fix CSP & Security Headers
 - **Prompt File:** `plans/phase1-security/M1.4-csp-headers.md`
@@ -370,7 +371,7 @@ Each prompt file contains:
 
 ### Last Updated: 2025-12-29
 ### Current Phase: Phase 1 - Security & Critical Fixes
-### Current Milestone: M1.2 Completed
+### Current Milestone: M1.3 Completed
 ### Blockers: None
 
 ### Session Log
@@ -378,6 +379,7 @@ Each prompt file contains:
 |------|---------|-----------|--------|-------|
 | 2025-12-29 | 1 | M1.1 CSRF Protection | COMPLETED | Custom Double Submit Cookie pattern |
 | 2025-12-29 | 2 | M1.2 JWT Race Condition | COMPLETED | Safe next() wrapper, timeout handling |
+| 2025-12-29 | 3 | M1.3 Auth Security | COMPLETED | Account lockout, IP reputation, Redis concurrent limiter |
 
 ---
 

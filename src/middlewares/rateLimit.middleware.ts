@@ -8,6 +8,7 @@ import { redis } from '@config/redis';
 import { config } from '@config/index';
 import logger from '@utils/logger';
 import { ERROR_CODES, ERROR_MESSAGES } from '@utils/constants';
+import { ipReputationService } from '@services/ipReputation.service';
 
 // ============================================
 // Types
@@ -308,48 +309,115 @@ export function ipRateLimit(
 }
 
 // ============================================
-// Concurrent Request Limiting
+// Concurrent Request Limiting (Redis-based)
 // ============================================
 
 /**
- * Limit concurrent requests per user/key
+ * Limit concurrent requests per user/key using Redis
+ * This is distributed and works across multiple instances
  * @param max - Maximum concurrent requests
  */
 export function concurrentLimit(
   max: number = 5
-): (req: Request, res: Response, next: NextFunction) => void {
-  const inFlight = new Map<string, number>();
-
-  return (req: Request, res: Response, next: NextFunction): void => {
+): (req: Request, res: Response, next: NextFunction) => Promise<void> {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const key = req.userId?.toString() || req.apiKey?._id.toString() || req.ip || 'unknown';
+    const redisKey = `concurrent:${key}`;
 
-    const current = inFlight.get(key) || 0;
+    let decremented = false;
 
-    if (current >= max) {
-      res.status(429).json({
-        success: false,
-        error: {
-          code: ERROR_CODES.RATE_LIMIT_EXCEEDED,
-          message: `Maximum ${max} concurrent requests allowed`,
-        },
+    try {
+      const current = await redis.incr(redisKey);
+
+      // Set expiry on first increment (failsafe cleanup - 5 minutes max)
+      if (current === 1) {
+        await redis.expire(redisKey, 300);
+      }
+
+      if (current > max) {
+        await redis.decr(redisKey);
+        res.status(429).json({
+          success: false,
+          error: {
+            code: ERROR_CODES.RATE_LIMIT_EXCEEDED,
+            message: `Maximum ${max} concurrent requests allowed`,
+          },
+        });
+        return;
+      }
+
+      // Decrement on response finish
+      res.on('finish', async () => {
+        if (!decremented) {
+          decremented = true;
+          try {
+            await redis.decr(redisKey);
+          } catch (error) {
+            logger.error('Failed to decrement concurrent counter', { error, key });
+          }
+        }
       });
-      return;
+
+      // Also handle connection close (client disconnect)
+      req.on('close', async () => {
+        if (!res.writableEnded && !decremented) {
+          decremented = true;
+          try {
+            await redis.decr(redisKey);
+          } catch (error) {
+            logger.error('Failed to decrement concurrent counter on close', { error, key });
+          }
+        }
+      });
+
+      next();
+    } catch (error) {
+      // Redis failure - allow request but log
+      logger.error('Concurrent limiter Redis error', { error, key });
+      next();
+    }
+  };
+}
+
+// ============================================
+// Adaptive Rate Limiting
+// ============================================
+
+/**
+ * Adaptive auth rate limiter that applies stricter limits to suspicious IPs
+ * Normal IPs: 5 requests per minute
+ * Suspicious IPs: 1 request per minute
+ */
+export async function adaptiveAuthRateLimit(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+
+  try {
+    // Check if IP is suspicious
+    const suspicious = await ipReputationService.isSuspicious(ip);
+
+    if (suspicious) {
+      // Apply stricter rate limit for suspicious IPs
+      const strictAuthLimit = rateLimit({
+        windowMs: 60 * 1000,
+        max: 1, // Only 1 request per minute
+        keyPrefix: 'rl:auth:suspicious:',
+        keyGenerator: () => `ip:${ip}`,
+        message: 'Too many requests from this IP. Please try again later.',
+      });
+      return strictAuthLimit(req, res, next);
     }
 
-    inFlight.set(key, current + 1);
-
-    // Clean up on response finish
-    res.on('finish', () => {
-      const count = inFlight.get(key) || 1;
-      if (count <= 1) {
-        inFlight.delete(key);
-      } else {
-        inFlight.set(key, count - 1);
-      }
-    });
-
-    next();
-  };
+    // Normal auth rate limit
+    return authRateLimit(req, res, next);
+  } catch (error) {
+    // On error, fall back to normal rate limit
+    logger.error('Adaptive rate limit check failed', { error, ip });
+    return authRateLimit(req, res, next);
+  }
 }
 
 // ============================================
@@ -365,4 +433,5 @@ export default {
   planBasedRateLimit,
   ipRateLimit,
   concurrentLimit,
+  adaptiveAuthRateLimit,
 };

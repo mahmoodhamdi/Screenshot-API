@@ -13,6 +13,8 @@ import { IUser, IApiKey, UserRole } from '@/types';
 import { config } from '@config/index';
 import { cache, invalidateCache } from '@config/redis';
 import logger from '@utils/logger';
+import { loginAttemptsService } from './loginAttempts.service';
+import { ipReputationService } from './ipReputation.service';
 
 // ============================================
 // Types
@@ -194,13 +196,50 @@ export async function registerUser(data: {
  * Login user with email and password
  * @param email - User email
  * @param password - User password
+ * @param ip - Client IP address (for lockout tracking)
  * @returns Auth result with user and tokens
  */
-export async function loginUser(email: string, password: string): Promise<AuthResult> {
+export async function loginUser(
+  email: string,
+  password: string,
+  ip: string = 'unknown'
+): Promise<AuthResult> {
+  const identifier = loginAttemptsService.createIdentifier(email, ip);
+
+  // Check if account is locked
+  const locked = await loginAttemptsService.isLocked(identifier);
+  if (locked) {
+    const expiry = await loginAttemptsService.getLockoutExpiry(identifier);
+    const retryAfter = expiry ? Math.ceil((expiry.getTime() - Date.now()) / 1000) : 900;
+    const error = new Error(
+      'Account temporarily locked due to too many failed attempts'
+    ) as Error & {
+      code: string;
+      retryAfter: number;
+      lockedUntil: string | null;
+    };
+    error.code = 'ACCOUNT_LOCKED';
+    error.retryAfter = retryAfter;
+    error.lockedUntil = expiry?.toISOString() || null;
+    throw error;
+  }
+
   // Find user with password (findByEmail already includes password field)
   const user = await User.findByEmail(email);
   if (!user) {
-    throw new Error('Invalid credentials');
+    // Record failed attempt for non-existent user
+    const attemptInfo = await loginAttemptsService.recordFailedAttempt(identifier);
+    if (attemptInfo.isLocked) {
+      // Record lockout for IP reputation
+      await ipReputationService.recordLockout(ip);
+    }
+    const error = new Error(
+      attemptInfo.remainingAttempts > 0
+        ? `Invalid credentials. ${attemptInfo.remainingAttempts} attempts remaining.`
+        : 'Account locked due to too many failed attempts.'
+    ) as Error & { remainingAttempts: number };
+    error.remainingAttempts = attemptInfo.remainingAttempts;
+    throw error;
   }
 
   // Check if user is active
@@ -211,8 +250,23 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
   // Verify password
   const isValidPassword = await user.comparePassword(password);
   if (!isValidPassword) {
-    throw new Error('Invalid credentials');
+    // Record failed attempt
+    const attemptInfo = await loginAttemptsService.recordFailedAttempt(identifier);
+    if (attemptInfo.isLocked) {
+      // Record lockout for IP reputation
+      await ipReputationService.recordLockout(ip);
+    }
+    const error = new Error(
+      attemptInfo.remainingAttempts > 0
+        ? `Invalid credentials. ${attemptInfo.remainingAttempts} attempts remaining.`
+        : 'Account locked due to too many failed attempts.'
+    ) as Error & { remainingAttempts: number };
+    error.remainingAttempts = attemptInfo.remainingAttempts;
+    throw error;
   }
+
+  // Successful login - clear attempts
+  await loginAttemptsService.recordSuccessfulLogin(identifier);
 
   // Generate tokens
   const tokens = generateTokenPair(user);

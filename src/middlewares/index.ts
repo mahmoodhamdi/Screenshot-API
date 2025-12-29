@@ -23,6 +23,7 @@ export {
   planBasedRateLimit,
   ipRateLimit,
   concurrentLimit,
+  adaptiveAuthRateLimit,
 } from './rateLimit.middleware';
 
 export {

@@ -14,6 +14,7 @@ import {
   adaptiveAuthRateLimit,
 } from '@middlewares/index';
 import { validators } from '@middlewares/validation.middleware';
+import { validatePasswordStrength, getPasswordStrengthLabel } from '@utils/passwordValidator';
 
 const router = Router();
 
@@ -274,6 +275,100 @@ router.post(
   strictRateLimit,
   validators.forgotPassword,
   authController.forgotPassword
+);
+
+/**
+ * @openapi
+ * /auth/check-password-strength:
+ *   post:
+ *     summary: Check password strength
+ *     description: Analyze password strength for UI feedback during registration or password change
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 description: Password to check
+ *               email:
+ *                 type: string
+ *                 description: User email (optional, for checking similarity)
+ *               name:
+ *                 type: string
+ *                 description: User name (optional, for checking similarity)
+ *           example:
+ *             password: MyP@ssword123
+ *             email: user@example.com
+ *     responses:
+ *       200:
+ *         description: Password strength analysis
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     score:
+ *                       type: integer
+ *                       minimum: 0
+ *                       maximum: 4
+ *                       description: Password strength score (0=very weak, 4=very strong)
+ *                     label:
+ *                       type: string
+ *                       description: Human-readable strength label
+ *                       enum: [Very Weak, Weak, Fair, Strong, Very Strong]
+ *                     isStrong:
+ *                       type: boolean
+ *                       description: Whether the password meets minimum strength requirements
+ *                     crackTime:
+ *                       type: string
+ *                       description: Estimated time to crack the password
+ *                     feedback:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: Suggestions for improving password strength
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       429:
+ *         $ref: '#/components/responses/RateLimitError'
+ */
+router.post(
+  '/check-password-strength',
+  defaultRateLimit,
+  validators.checkPasswordStrength,
+  (req, res) => {
+    const { password, email, name } = req.body;
+
+    // Build user inputs array for zxcvbn to check against
+    const userInputs: string[] = [];
+    if (email) userInputs.push(email);
+    if (name) userInputs.push(name);
+
+    const result = validatePasswordStrength(password, userInputs);
+
+    res.json({
+      success: true,
+      data: {
+        score: result.score,
+        label: getPasswordStrengthLabel(result.score),
+        isStrong: result.isStrong,
+        crackTime: result.crackTime,
+        feedback: result.feedback,
+      },
+    });
+  }
 );
 
 /**

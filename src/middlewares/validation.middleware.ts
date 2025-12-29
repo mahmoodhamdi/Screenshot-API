@@ -7,6 +7,10 @@ import { Request, Response, NextFunction } from 'express';
 import { z, ZodError, ZodSchema } from 'zod';
 import { ERROR_CODES } from '@utils/constants';
 import { config } from '@config/index';
+import { passwordStrengthRefine } from '@utils/passwordValidator';
+import { validateScreenshotUrl } from '@utils/urlValidator';
+import { sanitizeHeaders } from '@utils/headerSanitizer';
+import { logger } from '@utils/logger';
 
 // ============================================
 // Types
@@ -94,6 +98,7 @@ function isValidWebhookUrlInternal(url: string): boolean {
 
 /**
  * Screenshot creation schema
+ * Uses enhanced URL validation, header sanitization, and cookie validation
  */
 export const createScreenshotSchema = z.object({
   url: z
@@ -101,14 +106,13 @@ export const createScreenshotSchema = z.object({
     .url('Invalid URL format')
     .refine(
       (url) => {
-        try {
-          const parsed = new URL(url);
-          return ['http:', 'https:'].includes(parsed.protocol);
-        } catch {
-          return false;
-        }
+        const result = validateScreenshotUrl(url);
+        return result.valid;
       },
-      { message: 'URL must use HTTP or HTTPS protocol' }
+      (url) => {
+        const result = validateScreenshotUrl(url);
+        return { message: result.error || 'Invalid URL' };
+      }
     ),
   width: z.number().int().min(320).max(7680).optional(),
   height: z.number().int().min(240).max(4320).optional(),
@@ -125,14 +129,27 @@ export const createScreenshotSchema = z.object({
       height: z.number().int().min(1),
     })
     .optional(),
-  headers: z.record(z.string()).optional(),
+  headers: z
+    .record(z.string())
+    .optional()
+    .transform((headers) => {
+      if (!headers) return undefined;
+      const result = sanitizeHeaders(headers);
+      if (result.blocked.length > 0) {
+        logger.warn('Headers blocked during sanitization', {
+          blocked: result.blocked,
+          warnings: result.warnings,
+        });
+      }
+      return result.headers;
+    }),
   cookies: z
     .array(
       z.object({
         name: z.string().min(1).max(256),
         value: z.string().max(4096),
-        domain: z.string().optional(),
-        path: z.string().optional(),
+        domain: z.string().max(253).optional(),
+        path: z.string().max(1024).optional(),
         expires: z.number().optional(),
         httpOnly: z.boolean().optional(),
         secure: z.boolean().optional(),
@@ -183,18 +200,22 @@ export const idParamSchema = z.object({
 });
 
 /**
+ * Strong password schema using zxcvbn
+ */
+const strongPasswordSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(128, 'Password must be less than 128 characters')
+  .refine(passwordStrengthRefine, {
+    message: 'Password is too weak. Use a mix of characters and avoid common patterns.',
+  });
+
+/**
  * User registration schema
  */
 export const registerSchema = z.object({
   email: z.string().email('Invalid email format'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(100)
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-    ),
+  password: strongPasswordSchema,
   name: z.string().min(2).max(100),
   company: z.string().max(200).optional(),
 });
@@ -219,14 +240,7 @@ export const refreshTokenSchema = z.object({
  */
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(100)
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-    ),
+  newPassword: strongPasswordSchema,
 });
 
 /**
@@ -241,14 +255,16 @@ export const forgotPasswordSchema = z.object({
  */
 export const resetPasswordSchema = z.object({
   token: z.string().length(64, 'Invalid token format'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(100)
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-    ),
+  password: strongPasswordSchema,
+});
+
+/**
+ * Password strength check schema (for UI feedback)
+ */
+export const checkPasswordStrengthSchema = z.object({
+  password: z.string().min(1, 'Password is required'),
+  email: z.string().optional(),
+  name: z.string().optional(),
 });
 
 /**
@@ -459,6 +475,7 @@ export const validators = {
   changePassword: validateBody(changePasswordSchema),
   forgotPassword: validateBody(forgotPasswordSchema),
   resetPassword: validateBody(resetPasswordSchema),
+  checkPasswordStrength: validateBody(checkPasswordStrengthSchema),
 
   // API key validators
   createApiKey: validateBody(createApiKeySchema),
@@ -498,6 +515,7 @@ export default {
   changePasswordSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  checkPasswordStrengthSchema,
   createApiKeySchema,
   createCheckoutSchema,
   dateRangeSchema,

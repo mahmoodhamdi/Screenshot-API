@@ -90,18 +90,24 @@ export function generateRegisterForm(config: RegisterPageConfig = {}): string {
           <span class="req-icon"></span>
           <span>At least 8 characters</span>
         </div>
+        <div class="requirement" id="req-uppercase">
+          <span class="req-icon"></span>
+          <span>Contains uppercase</span>
+        </div>
+        <div class="requirement" id="req-lowercase">
+          <span class="req-icon"></span>
+          <span>Contains lowercase</span>
+        </div>
         <div class="requirement" id="req-number">
           <span class="req-icon"></span>
           <span>Contains a number</span>
         </div>
-        <div class="requirement" id="req-special">
-          <span class="req-icon"></span>
-          <span>Contains a special character</span>
-        </div>
-        <div class="requirement" id="req-uppercase">
-          <span class="req-icon"></span>
-          <span>Contains an uppercase letter</span>
-        </div>
+      </div>
+
+      <!-- Password Feedback from API -->
+      <div class="password-feedback" id="password-feedback" style="display: none;">
+        <div class="feedback-crack-time" id="feedback-crack-time"></div>
+        <ul class="feedback-suggestions" id="feedback-suggestions"></ul>
       </div>
 
       <div id="password-error" class="form-error" role="alert" style="display: none;"></div>
@@ -324,6 +330,44 @@ export function getRegisterStyles(): string {
       background-repeat: no-repeat;
     }
 
+    /* Password Feedback from API */
+    .password-feedback {
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      background: rgba(99, 102, 241, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(99, 102, 241, 0.1);
+    }
+
+    .feedback-crack-time {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .feedback-crack-time strong {
+      color: var(--accent-primary);
+    }
+
+    .feedback-suggestions {
+      margin: 0;
+      padding-left: 1.25rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .feedback-suggestions li {
+      margin-bottom: 0.25rem;
+    }
+
+    .feedback-suggestions li:last-child {
+      margin-bottom: 0;
+    }
+
+    .feedback-suggestions:empty {
+      display: none;
+    }
+
     /* Terms Checkbox Group */
     .auth-checkbox-group {
       margin-bottom: 0.5rem;
@@ -471,23 +515,30 @@ export function getRegisterScripts(): string {
     const strengthText = document.getElementById('strength-text');
     const reqLength = document.getElementById('req-length');
     const reqNumber = document.getElementById('req-number');
-    const reqSpecial = document.getElementById('req-special');
+    const reqLowercase = document.getElementById('req-lowercase');
     const reqUppercase = document.getElementById('req-uppercase');
+    const feedbackContainer = document.getElementById('password-feedback');
+    const feedbackCrackTime = document.getElementById('feedback-crack-time');
+    const feedbackSuggestions = document.getElementById('feedback-suggestions');
 
     // Password requirements regex
     const requirements = {
       length: (password) => password.length >= 8,
       number: (password) => /\\d/.test(password),
-      special: (password) => /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      lowercase: (password) => /[a-z]/.test(password),
       uppercase: (password) => /[A-Z]/.test(password),
     };
 
-    // Update password strength indicator
+    // Debounce timer for API calls
+    let strengthCheckTimer = null;
+
+    // Update password strength indicator (local + API)
     function updatePasswordStrength(password) {
+      // Local checks first (instant feedback)
       const checks = {
         length: requirements.length(password),
         number: requirements.number(password),
-        special: requirements.special(password),
+        lowercase: requirements.lowercase(password),
         uppercase: requirements.uppercase(password),
       };
 
@@ -496,12 +547,12 @@ export function getRegisterScripts(): string {
       reqLength.classList.toggle('unmet', !checks.length);
       reqNumber.classList.toggle('met', checks.number);
       reqNumber.classList.toggle('unmet', !checks.number);
-      reqSpecial.classList.toggle('met', checks.special);
-      reqSpecial.classList.toggle('unmet', !checks.special);
+      reqLowercase.classList.toggle('met', checks.lowercase);
+      reqLowercase.classList.toggle('unmet', !checks.lowercase);
       reqUppercase.classList.toggle('met', checks.uppercase);
       reqUppercase.classList.toggle('unmet', !checks.uppercase);
 
-      // Calculate strength
+      // Calculate local strength
       const metCount = Object.values(checks).filter(Boolean).length;
 
       // Remove all classes
@@ -511,9 +562,11 @@ export function getRegisterScripts(): string {
       if (password.length === 0) {
         strengthFill.style.width = '0%';
         strengthText.textContent = '';
+        feedbackContainer.style.display = 'none';
         return;
       }
 
+      // Local strength estimate (will be updated by API)
       if (metCount <= 1) {
         strengthFill.classList.add('weak');
         strengthText.classList.add('weak');
@@ -521,12 +574,91 @@ export function getRegisterScripts(): string {
       } else if (metCount <= 3) {
         strengthFill.classList.add('medium');
         strengthText.classList.add('medium');
-        strengthText.textContent = 'Medium';
+        strengthText.textContent = 'Fair';
       } else {
         strengthFill.classList.add('strong');
         strengthText.classList.add('strong');
         strengthText.textContent = 'Strong';
       }
+
+      // Debounce API call for detailed analysis
+      if (strengthCheckTimer) {
+        clearTimeout(strengthCheckTimer);
+      }
+
+      if (password.length >= 4) {
+        strengthCheckTimer = setTimeout(() => {
+          checkPasswordStrengthAPI(password);
+        }, 300);
+      } else {
+        feedbackContainer.style.display = 'none';
+      }
+    }
+
+    // Call API for detailed password strength analysis
+    async function checkPasswordStrengthAPI(password) {
+      try {
+        const response = await fetch('/api/v1/auth/check-password-strength', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            password: password,
+            email: emailInput?.value || '',
+            name: nameInput?.value || ''
+          })
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!data.success) return;
+
+        const { score, label, crackTime, feedback, isStrong } = data.data;
+
+        // Update strength bar based on API score
+        strengthFill.classList.remove('weak', 'medium', 'strong');
+        strengthText.classList.remove('weak', 'medium', 'strong');
+
+        if (score <= 1) {
+          strengthFill.classList.add('weak');
+          strengthText.classList.add('weak');
+        } else if (score === 2) {
+          strengthFill.classList.add('medium');
+          strengthText.classList.add('medium');
+        } else {
+          strengthFill.classList.add('strong');
+          strengthText.classList.add('strong');
+        }
+
+        strengthText.textContent = label;
+
+        // Show feedback
+        if (crackTime || (feedback && feedback.length > 0)) {
+          feedbackCrackTime.innerHTML = crackTime
+            ? 'Time to crack: <strong>' + crackTime + '</strong>'
+            : '';
+
+          feedbackSuggestions.innerHTML = feedback
+            .slice(0, 3) // Limit to 3 suggestions
+            .map(f => '<li>' + escapeHtml(f) + '</li>')
+            .join('');
+
+          feedbackContainer.style.display = 'block';
+        } else {
+          feedbackContainer.style.display = 'none';
+        }
+
+      } catch (error) {
+        console.error('Password strength check failed:', error);
+        // Keep local estimate on error
+      }
+    }
+
+    // Escape HTML for safe display
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     // Validation rules
@@ -550,9 +682,11 @@ export function getRegisterScripts(): string {
         validate: (value) => {
           if (!value) return 'Password is required';
           if (value.length < 8) return 'Password must be at least 8 characters';
-          if (!/\\d/.test(value)) return 'Password must contain a number';
+          if (value.length > 128) return 'Password is too long';
+          // Basic requirements for client-side, server will do full zxcvbn check
+          if (!/[a-z]/.test(value)) return 'Password must contain a lowercase letter';
           if (!/[A-Z]/.test(value)) return 'Password must contain an uppercase letter';
-          if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) return 'Password must contain a special character';
+          if (!/\\d/.test(value)) return 'Password must contain a number';
           return null;
         }
       },

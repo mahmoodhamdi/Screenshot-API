@@ -23,9 +23,17 @@ declare global {
       apiKey?: IApiKey;
       tokenPayload?: TokenPayload;
       userId?: Types.ObjectId;
+      closed?: boolean;
     }
   }
 }
+
+// ============================================
+// Constants
+// ============================================
+
+const USER_LOOKUP_TIMEOUT_MS = 5000;
+const API_KEY_VALIDATION_TIMEOUT_MS = 5000;
 
 // ============================================
 // Helper Functions
@@ -78,6 +86,56 @@ async function getUser(userId: string): Promise<IUser | null> {
   return user;
 }
 
+/**
+ * Get user with timeout protection
+ * Prevents hanging requests when database is slow
+ * @param userId - User ID
+ * @param timeoutMs - Timeout in milliseconds
+ * @returns User or null
+ * @throws Error on timeout
+ */
+async function getUserWithTimeout(
+  userId: string,
+  timeoutMs = USER_LOOKUP_TIMEOUT_MS
+): Promise<IUser | null> {
+  let timeoutId: NodeJS.Timeout;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('User lookup timeout')), timeoutMs);
+  });
+
+  try {
+    const result = await Promise.race([getUser(userId), timeoutPromise]);
+    clearTimeout(timeoutId!);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutId!);
+    throw error;
+  }
+}
+
+/**
+ * Create a safe next() wrapper that prevents multiple calls
+ * @param next - Express NextFunction
+ * @param context - Context for logging (e.g., middleware name)
+ * @returns Wrapped next function
+ */
+function createSafeNext(next: NextFunction, context: string): (err?: Error | unknown) => void {
+  let called = false;
+  return (err?: Error | unknown): void => {
+    if (called) {
+      logger.warn(`next() called multiple times in ${context}`);
+      return;
+    }
+    called = true;
+    if (err) {
+      next(err);
+    } else {
+      next();
+    }
+  };
+}
+
 // ============================================
 // Authentication Middlewares
 // ============================================
@@ -85,119 +143,210 @@ async function getUser(userId: string): Promise<IUser | null> {
 /**
  * Authenticate user with JWT token
  * Requires valid Bearer token in Authorization header
+ *
+ * Fixed for race conditions:
+ * - Uses async/await pattern with proper error handling
+ * - Prevents multiple next() calls
+ * - Adds timeout protection for user lookup
+ * - Handles client disconnection
  */
-export function authenticateJWT(req: Request, res: Response, next: NextFunction): void {
-  const token = extractBearerToken(req.headers.authorization);
+export async function authenticateJWT(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  const safeNext = createSafeNext(next, 'authenticateJWT');
 
-  if (!token) {
-    res.status(401).json({
-      success: false,
-      error: {
-        code: ERROR_CODES.UNAUTHORIZED,
-        message: ERROR_MESSAGES.MISSING_TOKEN,
-      },
-    });
-    return;
-  }
+  try {
+    const token = extractBearerToken(req.headers.authorization);
 
-  const payload = verifyAccessToken(token);
-  if (!payload) {
-    res.status(401).json({
-      success: false,
-      error: {
-        code: ERROR_CODES.UNAUTHORIZED,
-        message: ERROR_MESSAGES.INVALID_TOKEN,
-      },
-    });
-    return;
-  }
-
-  // Store payload in request
-  req.tokenPayload = payload;
-  req.userId = new Types.ObjectId(payload.userId);
-
-  // Fetch user asynchronously
-  getUser(payload.userId)
-    .then((user) => {
-      if (!user) {
-        res.status(401).json({
-          success: false,
-          error: {
-            code: ERROR_CODES.UNAUTHORIZED,
-            message: ERROR_MESSAGES.USER_NOT_FOUND,
-          },
-        });
-        return;
-      }
-
-      if (!user.isActive) {
-        res.status(403).json({
-          success: false,
-          error: {
-            code: ERROR_CODES.FORBIDDEN,
-            message: ERROR_MESSAGES.ACCOUNT_DISABLED,
-          },
-        });
-        return;
-      }
-
-      req.user = user;
-      next();
-    })
-    .catch((error) => {
-      logger.error('Error fetching user', { error: error.message, userId: payload.userId });
-      res.status(500).json({
+    if (!token) {
+      res.status(401).json({
         success: false,
         error: {
-          code: ERROR_CODES.INTERNAL_ERROR,
-          message: ERROR_MESSAGES.INTERNAL_ERROR,
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: ERROR_MESSAGES.MISSING_TOKEN,
         },
       });
+      return;
+    }
+
+    const payload = verifyAccessToken(token);
+    if (!payload) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: ERROR_MESSAGES.INVALID_TOKEN,
+        },
+      });
+      return;
+    }
+
+    // Store payload in request
+    req.tokenPayload = payload;
+    req.userId = new Types.ObjectId(payload.userId);
+
+    // Check if client disconnected before async operation
+    if (req.closed) {
+      return;
+    }
+
+    // Fetch user with timeout protection
+    let user: IUser | null;
+    try {
+      user = await getUserWithTimeout(payload.userId);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'User lookup timeout') {
+        logger.warn('User lookup timed out', { userId: payload.userId });
+        res.status(503).json({
+          success: false,
+          error: {
+            code: 'SERVICE_UNAVAILABLE',
+            message: 'Authentication service temporarily unavailable',
+          },
+        });
+        return;
+      }
+      throw error;
+    }
+
+    // Check again after async operation
+    if (req.closed) {
+      return;
+    }
+
+    if (!user) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: ERROR_MESSAGES.USER_NOT_FOUND,
+        },
+      });
+      return;
+    }
+
+    if (!user.isActive) {
+      res.status(403).json({
+        success: false,
+        error: {
+          code: ERROR_CODES.FORBIDDEN,
+          message: ERROR_MESSAGES.ACCOUNT_DISABLED,
+        },
+      });
+      return;
+    }
+
+    req.user = user;
+    safeNext();
+  } catch (error) {
+    logger.error('JWT authentication error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      path: req.path,
     });
+    res.status(500).json({
+      success: false,
+      error: {
+        code: ERROR_CODES.INTERNAL_ERROR,
+        message: ERROR_MESSAGES.INTERNAL_ERROR,
+      },
+    });
+  }
 }
 
 /**
  * Authenticate with API key
  * Requires valid API key in X-API-Key header
+ *
+ * Fixed for race conditions:
+ * - Uses async/await pattern with proper error handling
+ * - Prevents multiple next() calls
+ * - Adds timeout protection for API key validation
+ * - Handles client disconnection
  */
-export function authenticateApiKeyMiddleware(
+export async function authenticateApiKeyMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
-): void {
-  const apiKeyHeader = req.headers['x-api-key'] as string | undefined;
-  const apiKey = extractApiKey(apiKeyHeader);
+): Promise<void> {
+  const safeNext = createSafeNext(next, 'authenticateApiKeyMiddleware');
 
-  if (!apiKey) {
-    res.status(401).json({
-      success: false,
-      error: {
-        code: ERROR_CODES.UNAUTHORIZED,
-        message: ERROR_MESSAGES.MISSING_API_KEY,
-      },
+  try {
+    const apiKeyHeader = req.headers['x-api-key'] as string | undefined;
+    const apiKey = extractApiKey(apiKeyHeader);
+
+    if (!apiKey) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: ERROR_MESSAGES.MISSING_API_KEY,
+        },
+      });
+      return;
+    }
+
+    // Check if client disconnected before async operation
+    if (req.closed) {
+      return;
+    }
+
+    // Get client IP and origin
+    const clientIp = req.ip || req.socket.remoteAddress || '';
+    const origin = req.headers.origin || req.headers.referer || '';
+
+    // Validate API key with timeout protection
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(
+        () => reject(new Error('API key validation timeout')),
+        API_KEY_VALIDATION_TIMEOUT_MS
+      );
     });
-    return;
-  }
 
-  // Get client IP and origin
-  const clientIp = req.ip || req.socket.remoteAddress || '';
-  const origin = req.headers.origin || req.headers.referer || '';
+    let result: { apiKey: IApiKey; user: IUser };
+    try {
+      result = await Promise.race([authenticateApiKey(apiKey, clientIp, origin), timeoutPromise]);
+      clearTimeout(timeoutId!);
+    } catch (error) {
+      clearTimeout(timeoutId!);
+      if (error instanceof Error && error.message === 'API key validation timeout') {
+        logger.warn('API key validation timed out', { ip: clientIp });
+        res.status(503).json({
+          success: false,
+          error: {
+            code: 'SERVICE_UNAVAILABLE',
+            message: 'Authentication service temporarily unavailable',
+          },
+        });
+        return;
+      }
+      throw error;
+    }
 
-  authenticateApiKey(apiKey, clientIp, origin)
-    .then(({ apiKey: key, user }) => {
-      req.apiKey = key;
-      req.user = user;
-      req.userId = user._id;
-      next();
-    })
-    .catch((error) => {
-      logger.warn('API key authentication failed', { error: error.message, ip: clientIp });
+    // Check again after async operation
+    if (req.closed) {
+      return;
+    }
 
-      // Determine appropriate error code
-      let statusCode = 401;
-      let errorCode: string = ERROR_CODES.UNAUTHORIZED;
-      let errorMessage = ERROR_MESSAGES.INVALID_API_KEY;
+    req.apiKey = result.apiKey;
+    req.user = result.user;
+    req.userId = result.user._id;
+    safeNext();
+  } catch (error) {
+    const clientIp = req.ip || req.socket.remoteAddress || '';
+    logger.warn('API key authentication failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      ip: clientIp,
+    });
 
+    // Determine appropriate error code
+    let statusCode = 401;
+    let errorCode: string = ERROR_CODES.UNAUTHORIZED;
+    let errorMessage = ERROR_MESSAGES.INVALID_API_KEY;
+
+    if (error instanceof Error) {
       if (error.message.includes('IP address')) {
         statusCode = 403;
         errorCode = ERROR_CODES.FORBIDDEN;
@@ -213,36 +362,43 @@ export function authenticateApiKeyMiddleware(
         errorCode = ERROR_CODES.FORBIDDEN;
         errorMessage = 'User account is disabled';
       }
+    }
 
-      res.status(statusCode).json({
-        success: false,
-        error: {
-          code: errorCode,
-          message: errorMessage,
-        },
-      });
+    res.status(statusCode).json({
+      success: false,
+      error: {
+        code: errorCode,
+        message: errorMessage,
+      },
     });
+  }
 }
 
 /**
  * Authenticate with either JWT or API key
  * Tries JWT first, then API key
+ *
+ * Fixed for race conditions:
+ * - Delegates to already-fixed auth functions
+ * - Uses async/await pattern
  */
-export function authenticateAny(req: Request, res: Response, next: NextFunction): void {
+export async function authenticateAny(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   const token = extractBearerToken(req.headers.authorization);
   const apiKeyHeader = req.headers['x-api-key'] as string | undefined;
   const apiKey = extractApiKey(apiKeyHeader);
 
   // Try JWT first
   if (token) {
-    authenticateJWT(req, res, next);
-    return;
+    return authenticateJWT(req, res, next);
   }
 
   // Try API key
   if (apiKey) {
-    authenticateApiKeyMiddleware(req, res, next);
-    return;
+    return authenticateApiKeyMiddleware(req, res, next);
   }
 
   // No authentication provided
@@ -258,15 +414,32 @@ export function authenticateAny(req: Request, res: Response, next: NextFunction)
 /**
  * Optional authentication - doesn't fail if no auth provided
  * Useful for endpoints that behave differently for authenticated users
+ *
+ * Fixed for race conditions:
+ * - Uses async/await pattern with proper error handling
+ * - Prevents multiple next() calls
+ * - Adds timeout protection
+ * - Handles client disconnection
  */
-export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
+export async function optionalAuth(
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): Promise<void> {
+  const safeNext = createSafeNext(next, 'optionalAuth');
+
   const token = extractBearerToken(req.headers.authorization);
   const apiKeyHeader = req.headers['x-api-key'] as string | undefined;
   const apiKey = extractApiKey(apiKeyHeader);
 
   // If no auth, just continue
   if (!token && !apiKey) {
-    next();
+    safeNext();
+    return;
+  }
+
+  // Check if client disconnected
+  if (req.closed) {
     return;
   }
 
@@ -276,16 +449,18 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
     if (payload) {
       req.tokenPayload = payload;
       req.userId = new Types.ObjectId(payload.userId);
-      getUser(payload.userId)
-        .then((user) => {
-          if (user && user.isActive) {
-            req.user = user;
-          }
-          next();
-        })
-        .catch(() => {
-          next();
-        });
+
+      try {
+        const user = await getUserWithTimeout(payload.userId);
+        if (req.closed) return;
+        if (user && user.isActive) {
+          req.user = user;
+        }
+      } catch {
+        // Silently ignore errors in optional auth
+      }
+
+      safeNext();
       return;
     }
   }
@@ -294,20 +469,36 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
     const clientIp = req.ip || req.socket.remoteAddress || '';
     const origin = req.headers.origin || req.headers.referer || '';
 
-    authenticateApiKey(apiKey, clientIp, origin)
-      .then(({ apiKey: key, user }) => {
-        req.apiKey = key;
-        req.user = user;
-        req.userId = user._id;
-        next();
-      })
-      .catch(() => {
-        next();
+    let timeoutId: NodeJS.Timeout;
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error('API key validation timeout')),
+          API_KEY_VALIDATION_TIMEOUT_MS
+        );
       });
+
+      const result = await Promise.race([
+        authenticateApiKey(apiKey, clientIp, origin),
+        timeoutPromise,
+      ]);
+      clearTimeout(timeoutId!);
+
+      if (req.closed) return;
+
+      req.apiKey = result.apiKey;
+      req.user = result.user;
+      req.userId = result.user._id;
+    } catch {
+      clearTimeout(timeoutId!);
+      // Silently ignore errors in optional auth
+    }
+
+    safeNext();
     return;
   }
 
-  next();
+  safeNext();
 }
 
 // ============================================

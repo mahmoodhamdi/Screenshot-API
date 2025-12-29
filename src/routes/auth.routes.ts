@@ -11,6 +11,7 @@ import {
   authRateLimit,
   strictRateLimit,
   defaultRateLimit,
+  adaptiveAuthRateLimit,
 } from '@middlewares/index';
 import { validators } from '@middlewares/validation.middleware';
 
@@ -75,7 +76,7 @@ const router = Router();
  *       429:
  *         $ref: '#/components/responses/RateLimitError'
  */
-router.post('/register', authRateLimit, validators.register, authController.register);
+router.post('/register', adaptiveAuthRateLimit, validators.register, authController.register);
 
 /**
  * @openapi
@@ -130,7 +131,7 @@ router.post('/register', authRateLimit, validators.register, authController.regi
  *       429:
  *         $ref: '#/components/responses/RateLimitError'
  */
-router.post('/login', authRateLimit, validators.login, authController.login);
+router.post('/login', adaptiveAuthRateLimit, validators.login, authController.login);
 
 /**
  * @openapi

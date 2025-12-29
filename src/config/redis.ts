@@ -428,6 +428,26 @@ export const redis = {
     if (!redisClient) return 0;
     return redisClient.expire(key, seconds);
   },
+  incr: async (key: string): Promise<number> => {
+    if (!redisClient) return 0;
+    return redisClient.incr(key);
+  },
+  decr: async (key: string): Promise<number> => {
+    if (!redisClient) return 0;
+    return redisClient.decr(key);
+  },
+  setex: async (key: string, seconds: number, value: string): Promise<'OK' | null> => {
+    if (!redisClient) return null;
+    return redisClient.setex(key, seconds, value);
+  },
+  exists: async (...keys: string[]): Promise<number> => {
+    if (!redisClient) return 0;
+    return redisClient.exists(...keys);
+  },
+  ttl: async (key: string): Promise<number> => {
+    if (!redisClient) return -2;
+    return redisClient.ttl(key);
+  },
 };
 
 /**

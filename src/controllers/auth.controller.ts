@@ -56,25 +56,52 @@ const register = asyncHandler(async (req: Request, res: Response) => {
  */
 const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
 
-  const { user, tokens } = await authService.loginUser(email, password);
+  try {
+    const { user, tokens } = await authService.loginUser(email, password, ip);
 
-  res.json({
-    success: true,
-    message: 'Login successful',
-    data: {
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        company: user.company,
-        isVerified: user.isVerified,
-        subscription: user.subscription,
-        role: user.role,
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          company: user.company,
+          isVerified: user.isVerified,
+          subscription: user.subscription,
+          role: user.role,
+        },
+        tokens,
       },
-      tokens,
-    },
-  });
+    });
+  } catch (error) {
+    // Handle lockout errors with proper response format
+    const err = error as Error & {
+      code?: string;
+      retryAfter?: number;
+      lockedUntil?: string;
+      remainingAttempts?: number;
+    };
+
+    if (err.code === 'ACCOUNT_LOCKED') {
+      res.status(429).json({
+        success: false,
+        error: {
+          code: 'ACCOUNT_LOCKED',
+          message: err.message,
+          retryAfter: err.retryAfter,
+          lockedUntil: err.lockedUntil,
+        },
+      });
+      return;
+    }
+
+    // Re-throw other errors to be handled by error middleware
+    throw error;
+  }
 });
 
 /**

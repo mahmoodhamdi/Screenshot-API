@@ -78,3 +78,26 @@ export {
   getApiKeyStats,
   recordUsage,
 } from './analytics.service';
+
+// Login Attempts Service
+export {
+  loginAttemptsService,
+  createIdentifier,
+  recordFailedAttempt,
+  recordSuccessfulLogin,
+  isLocked as isAccountLocked,
+  getRemainingAttempts,
+  getLockoutExpiry,
+  getAttemptInfo,
+} from './loginAttempts.service';
+
+// IP Reputation Service
+export {
+  ipReputationService,
+  recordLockout,
+  markSuspicious,
+  isSuspicious,
+  getLockoutCount,
+  clearReputation,
+  getReputationInfo,
+} from './ipReputation.service';

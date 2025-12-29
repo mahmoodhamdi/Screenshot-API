@@ -351,6 +351,31 @@ describe('Rate Limit Middleware', () => {
   // ============================================
 
   describe('concurrentLimit', () => {
+    // Track concurrent counts in memory for testing
+    const concurrentCounts = new Map<string, number>();
+
+    beforeEach(() => {
+      concurrentCounts.clear();
+      // Mock Redis incr/decr for concurrent limit tests
+      jest.spyOn(redis, 'incr').mockImplementation(async (key: string) => {
+        const current = concurrentCounts.get(key) || 0;
+        const newValue = current + 1;
+        concurrentCounts.set(key, newValue);
+        return newValue;
+      });
+      jest.spyOn(redis, 'decr').mockImplementation(async (key: string) => {
+        const current = concurrentCounts.get(key) || 0;
+        const newValue = Math.max(0, current - 1);
+        concurrentCounts.set(key, newValue);
+        return newValue;
+      });
+      jest.spyOn(redis, 'expire').mockResolvedValue(1);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
     it('should allow requests within concurrent limit', async () => {
       const limiter = concurrentLimit(3);
       const req = mockRequest({
@@ -403,8 +428,8 @@ describe('Rate Limit Middleware', () => {
       // First request
       const req1 = mockRequest({ userId }) as Request;
       const res1 = mockResponse() as Response;
-      let finishCallback: (() => void) | undefined;
-      (res1.on as jest.Mock).mockImplementation((event: string, callback: () => void) => {
+      let finishCallback: (() => Promise<void>) | undefined;
+      (res1.on as jest.Mock).mockImplementation((event: string, callback: () => Promise<void>) => {
         if (event === 'finish') {
           finishCallback = callback;
         }
@@ -421,7 +446,7 @@ describe('Rate Limit Middleware', () => {
 
       // Simulate first request finishing
       if (finishCallback) {
-        finishCallback();
+        await finishCallback();
       }
 
       // Third request should now be allowed

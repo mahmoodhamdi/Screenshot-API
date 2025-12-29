@@ -1,6 +1,6 @@
 /**
  * Rate Limiting Middleware
- * Implements sliding window rate limiting using Redis
+ * Implements sliding window rate limiting using Redis with circuit breaker fallback
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -9,6 +9,8 @@ import { config } from '@config/index';
 import logger from '@utils/logger';
 import { ERROR_CODES, ERROR_MESSAGES } from '@utils/constants';
 import { ipReputationService } from '@services/ipReputation.service';
+import { redisCircuitBreaker, CircuitState } from '@utils/circuitBreaker';
+import { fallbackRateLimiter } from '@utils/fallbackRateLimiter';
 
 // ============================================
 // Types
@@ -113,6 +115,7 @@ async function getRateLimitInfo(
 
 /**
  * Check if request should be rate limited
+ * Uses circuit breaker pattern with fallback to in-memory rate limiting
  * @param key - Rate limit key
  * @param windowMs - Window size in milliseconds
  * @param max - Maximum requests
@@ -122,24 +125,36 @@ async function checkRateLimit(
   key: string,
   windowMs: number,
   max: number
-): Promise<RateLimitInfo & { isLimited: boolean }> {
-  try {
-    const info = await getRateLimitInfo(key, windowMs, max);
-    return {
-      ...info,
-      isLimited: info.current > max,
-    };
-  } catch (error) {
-    // On Redis error, allow the request but log
-    logger.error('Rate limit check failed', { error, key });
-    return {
-      limit: max,
-      current: 0,
-      remaining: max,
-      resetTime: Date.now() + windowMs,
-      isLimited: false,
-    };
-  }
+): Promise<RateLimitInfo & { isLimited: boolean; usingFallback: boolean }> {
+  const result = await redisCircuitBreaker.execute(
+    // Primary: Redis-based rate limiting
+    async () => {
+      const info = await getRateLimitInfo(key, windowMs, max);
+      return {
+        ...info,
+        isLimited: info.current > max,
+        usingFallback: false,
+      };
+    },
+    // Fallback: In-memory rate limiting
+    async () => {
+      logger.warn('Using fallback rate limiter', {
+        key,
+        circuitState: redisCircuitBreaker.getState(),
+      });
+      const fallbackResult = await fallbackRateLimiter.check(key, max, windowMs);
+      return {
+        limit: max,
+        current: max - fallbackResult.remaining,
+        remaining: fallbackResult.remaining,
+        resetTime: fallbackResult.resetAt,
+        isLimited: !fallbackResult.allowed,
+        usingFallback: true,
+      };
+    }
+  );
+
+  return result;
 }
 
 // ============================================
@@ -309,23 +324,69 @@ export function ipRateLimit(
 }
 
 // ============================================
-// Concurrent Request Limiting (Redis-based)
+// Concurrent Request Limiting (Redis-based with fallback)
 // ============================================
 
 /**
  * Limit concurrent requests per user/key using Redis
  * This is distributed and works across multiple instances
+ * Falls back to in-memory limiting when Redis is unavailable
  * @param max - Maximum concurrent requests
  */
 export function concurrentLimit(
   max: number = 5
 ): (req: Request, res: Response, next: NextFunction) => Promise<void> {
+  // In-memory fallback store for concurrent requests
+  const fallbackStore = new Map<string, number>();
+
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const key = req.userId?.toString() || req.apiKey?._id.toString() || req.ip || 'unknown';
     const redisKey = `concurrent:${key}`;
 
     let decremented = false;
 
+    // Check circuit breaker state
+    const circuitOpen = redisCircuitBreaker.getState() === CircuitState.OPEN;
+
+    if (circuitOpen) {
+      // Use in-memory fallback
+      const current = (fallbackStore.get(key) || 0) + 1;
+      fallbackStore.set(key, current);
+
+      if (current > max) {
+        fallbackStore.set(key, current - 1);
+        res.status(429).json({
+          success: false,
+          error: {
+            code: ERROR_CODES.RATE_LIMIT_EXCEEDED,
+            message: `Maximum ${max} concurrent requests allowed`,
+          },
+        });
+        return;
+      }
+
+      // Decrement fallback store on finish
+      res.on('finish', () => {
+        if (!decremented) {
+          decremented = true;
+          const curr = fallbackStore.get(key) || 0;
+          fallbackStore.set(key, Math.max(0, curr - 1));
+        }
+      });
+
+      req.on('close', () => {
+        if (!res.writableEnded && !decremented) {
+          decremented = true;
+          const curr = fallbackStore.get(key) || 0;
+          fallbackStore.set(key, Math.max(0, curr - 1));
+        }
+      });
+
+      next();
+      return;
+    }
+
+    // Try Redis
     try {
       const current = await redis.incr(redisKey);
 
@@ -372,11 +433,49 @@ export function concurrentLimit(
 
       next();
     } catch (error) {
-      // Redis failure - allow request but log
-      logger.error('Concurrent limiter Redis error', { error, key });
+      // Redis failure - use fallback
+      logger.error('Concurrent limiter Redis error, using fallback', { error, key });
+
+      const current = (fallbackStore.get(key) || 0) + 1;
+      fallbackStore.set(key, current);
+
+      if (current > max) {
+        fallbackStore.set(key, current - 1);
+        res.status(429).json({
+          success: false,
+          error: {
+            code: ERROR_CODES.RATE_LIMIT_EXCEEDED,
+            message: `Maximum ${max} concurrent requests allowed`,
+          },
+        });
+        return;
+      }
+
+      res.on('finish', () => {
+        if (!decremented) {
+          decremented = true;
+          const curr = fallbackStore.get(key) || 0;
+          fallbackStore.set(key, Math.max(0, curr - 1));
+        }
+      });
+
       next();
     }
   };
+}
+
+/**
+ * Get circuit breaker state for rate limiting
+ */
+export function getRateLimitCircuitState(): CircuitState {
+  return redisCircuitBreaker.getState();
+}
+
+/**
+ * Get circuit breaker statistics
+ */
+export function getRateLimitCircuitStats() {
+  return redisCircuitBreaker.getStats();
 }
 
 // ============================================
@@ -434,4 +533,6 @@ export default {
   ipRateLimit,
   concurrentLimit,
   adaptiveAuthRateLimit,
+  getRateLimitCircuitState,
+  getRateLimitCircuitStats,
 };

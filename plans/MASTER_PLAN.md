@@ -14,13 +14,13 @@ This document outlines a comprehensive review and production-readiness plan for 
 | Phase | Focus | Status | Progress |
 |-------|-------|--------|----------|
 | [Phase 1](#phase-1-security--critical-fixes) | Security & Critical Fixes | COMPLETED | 5/5 |
-| [Phase 2](#phase-2-complete-missing-implementations) | Complete Missing Implementations | IN_PROGRESS | 3/4 |
+| [Phase 2](#phase-2-complete-missing-implementations) | Complete Missing Implementations | COMPLETED | 4/4 |
 | [Phase 3](#phase-3-testing--quality) | Testing & Quality | NOT_STARTED | 0/5 |
 | [Phase 4](#phase-4-performance-optimization) | Performance Optimization | NOT_STARTED | 0/4 |
 | [Phase 5](#phase-5-polish--production-ready) | Polish & Production Ready | NOT_STARTED | 0/3 |
 
 **Total Milestones:** 21
-**Completed:** 8/21
+**Completed:** 9/21
 
 ---
 
@@ -187,13 +187,13 @@ This document outlines a comprehensive review and production-readiness plan for 
 
 ### Milestone 2.4: Input Validation Hardening
 - **Prompt File:** `plans/phase2-features/M2.4-input-validation.md`
-- **Status:** NOT_STARTED
+- **Status:** COMPLETED
 - **Checklist:**
-  - [ ] Add password entropy check (zxcvbn)
-  - [ ] Sanitize custom headers in screenshot requests
-  - [ ] Validate cookie values
-  - [ ] Add URL scheme validation (no file://, javascript:, etc.)
-  - [ ] Write tests
+  - [x] Add password entropy check (zxcvbn)
+  - [x] Sanitize custom headers in screenshot requests
+  - [x] Validate cookie values
+  - [x] Add URL scheme validation (no file://, javascript:, etc.)
+  - [x] Write tests (155 new validation tests)
 
 ---
 

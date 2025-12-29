@@ -26,6 +26,7 @@ import { ERROR_CODES } from '@utils/constants';
 const mockRequest = (overrides = {}): Partial<Request> => ({
   ip: '127.0.0.1',
   socket: { remoteAddress: '127.0.0.1' } as unknown as Request['socket'],
+  on: jest.fn().mockReturnThis(),
   ...overrides,
 });
 
@@ -92,9 +93,7 @@ describe('Rate Limit Middleware', () => {
     });
 
     it('should block requests exceeding limit when Redis is connected', async () => {
-      // Note: Without Redis connection, rate limiting fails open (allows requests)
-      // This test verifies the rate limiting logic by checking the response is set correctly
-      // In a real environment with Redis, this would block after exceeding the limit
+      // When Redis is connected, the rate limiter should properly track and block requests
       const testIp = `block-ip-${Date.now()}`;
       const limiter = rateLimit({
         windowMs: 60000,
@@ -108,20 +107,19 @@ describe('Rate Limit Middleware', () => {
         const res = mockResponse() as Response;
         const next = mockNext();
         await limiter(req, res, next);
+        expect(next).toHaveBeenCalled();
       }
 
-      // Next request - when Redis is not connected, the limiter fails open
-      // (allows requests through) to prevent service disruption
+      // Third request should be blocked
       const req = mockRequest({ ip: testIp }) as Request;
       const res = mockResponse() as Response;
       const next = mockNext();
 
       await limiter(req, res, next);
 
-      // Without Redis, the rate limiter allows requests through (fails open)
-      // This is intentional design to prevent blocking all requests when Redis is down
-      // The test verifies the middleware completes without error
-      expect(next).toHaveBeenCalled();
+      // With Redis connected, third request should be blocked with 429
+      expect(res.status).toHaveBeenCalledWith(429);
+      expect(next).not.toHaveBeenCalled();
     });
 
     it('should use custom key generator', async () => {

@@ -184,7 +184,7 @@ describe('Validation Middleware', () => {
     it('should validate valid registration', () => {
       const data = {
         email: 'test@example.com',
-        password: 'Password123',
+        password: 'MyS3cur3P@ssword!',  // Strong password for zxcvbn
         name: 'Test User',
       };
 
@@ -192,10 +192,10 @@ describe('Validation Middleware', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should reject weak password (no uppercase)', () => {
+    it('should reject weak password (common password)', () => {
       const data = {
         email: 'test@example.com',
-        password: 'password123',
+        password: 'password123',  // Common password
         name: 'Test User',
       };
 
@@ -203,10 +203,10 @@ describe('Validation Middleware', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should reject weak password (no lowercase)', () => {
+    it('should reject weak password (simple pattern)', () => {
       const data = {
         email: 'test@example.com',
-        password: 'PASSWORD123',
+        password: 'Abcd1234',  // Too simple pattern
         name: 'Test User',
       };
 
@@ -214,10 +214,10 @@ describe('Validation Middleware', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should reject weak password (no number)', () => {
+    it('should reject weak password (keyboard pattern)', () => {
       const data = {
         email: 'test@example.com',
-        password: 'Passwordd',
+        password: 'qwertyuiop',  // Keyboard pattern
         name: 'Test User',
       };
 
@@ -239,7 +239,7 @@ describe('Validation Middleware', () => {
     it('should validate with optional company', () => {
       const data = {
         email: 'test@example.com',
-        password: 'Password123',
+        password: 'C0mpl3x!Passw0rd#2024',  // Strong password
         name: 'Test User',
         company: 'Test Corp',
       };
@@ -279,7 +279,7 @@ describe('Validation Middleware', () => {
   describe('validate middleware', () => {
     it('should call next on valid body', () => {
       const req = mockRequest({
-        body: { email: 'test@example.com', password: 'Password123', name: 'Test' },
+        body: { email: 'test@example.com', password: 'MyS3cur3P@ssword!', name: 'Test' },
       }) as Request;
       const res = mockResponse() as Response;
       const next = mockNext();

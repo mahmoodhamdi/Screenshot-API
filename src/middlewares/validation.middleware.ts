@@ -147,6 +147,28 @@ export const changePasswordSchema = z.object({
 });
 
 /**
+ * Forgot password schema
+ */
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email format'),
+});
+
+/**
+ * Reset password schema
+ */
+export const resetPasswordSchema = z.object({
+  token: z.string().length(64, 'Invalid token format'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(100)
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+    ),
+});
+
+/**
  * API key creation schema
  */
 export const createApiKeySchema = z.object({
@@ -362,6 +384,8 @@ export const validators = {
   login: validateBody(loginSchema),
   refreshToken: validateBody(refreshTokenSchema),
   changePassword: validateBody(changePasswordSchema),
+  forgotPassword: validateBody(forgotPasswordSchema),
+  resetPassword: validateBody(resetPasswordSchema),
 
   // API key validators
   createApiKey: validateBody(createApiKeySchema),
@@ -397,6 +421,8 @@ export default {
   loginSchema,
   refreshTokenSchema,
   changePasswordSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   createApiKeySchema,
   createCheckoutSchema,
   dateRangeSchema,

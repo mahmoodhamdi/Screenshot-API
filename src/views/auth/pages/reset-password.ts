@@ -515,24 +515,23 @@ export function getResetPasswordScripts(): string {
       if (tokenInput) tokenInput.value = token;
 
       try {
-        const csrfToken = document.getElementById('csrf-token')?.value || '';
-        const response = await fetch('/api/v1/auth/validate-reset-token', {
-          method: 'POST',
+        const response = await fetch('/api/v1/auth/validate-reset-token?token=' + encodeURIComponent(token), {
+          method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken,
+            'Accept': 'application/json',
           },
           credentials: 'same-origin',
-          body: JSON.stringify({ token }),
         });
 
-        if (response.ok) {
+        const data = await response.json();
+
+        if (response.ok && data.data?.valid) {
           showState('form');
         } else {
           showState('invalid');
         }
       } catch (error) {
-        // If endpoint doesn't exist, just show the form
+        // If endpoint fails, just show the form (fallback)
         showState('form');
       }
     }

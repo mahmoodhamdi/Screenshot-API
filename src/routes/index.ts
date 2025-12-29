@@ -8,6 +8,7 @@ import authRoutes from './auth.routes';
 import screenshotRoutes from './screenshot.routes';
 import subscriptionRoutes from './subscription.routes';
 import analyticsRoutes from './analytics.routes';
+import webhookRoutes from './webhook.routes';
 
 const router = Router();
 
@@ -26,6 +27,9 @@ router.use('/subscriptions', subscriptionRoutes);
 
 // Analytics routes
 router.use('/analytics', analyticsRoutes);
+
+// Webhook routes
+router.use('/webhooks', webhookRoutes);
 
 // Health check
 router.get('/health', (_req: Request, res: Response) => {
@@ -49,6 +53,7 @@ router.get('/', (_req: Request, res: Response) => {
       users: '/api/v1/users',
       subscriptions: '/api/v1/subscriptions',
       analytics: '/api/v1/analytics',
+      webhooks: '/api/v1/webhooks',
     },
   });
 });

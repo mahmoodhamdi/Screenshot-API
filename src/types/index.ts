@@ -77,6 +77,7 @@ export interface IUser extends Document {
   verificationToken?: string;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
+  webhookSecret?: string;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -84,6 +85,7 @@ export interface IUser extends Document {
   incrementUsage(): Promise<void>;
   resetMonthlyUsage(): Promise<void>;
   getPlanLimits(): PlanLimits;
+  regenerateWebhookSecret(): Promise<string>;
 }
 
 // ============================================

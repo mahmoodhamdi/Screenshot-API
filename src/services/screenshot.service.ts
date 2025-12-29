@@ -36,6 +36,7 @@ import logger from '@utils/logger';
 import { cache } from '@config/redis';
 import { AppError } from '@middlewares/error.middleware';
 import { ERROR_CODES } from '@utils/constants';
+import { queueWebhook } from '@queues/webhook.queue';
 
 // ============================================
 // Types
@@ -372,12 +373,41 @@ export async function createScreenshot(
       size: storageResult.size,
     });
 
-    // Send webhook if configured
+    // Queue webhook if configured and plan allows
     if (dto.webhook) {
-      // Fire and forget - don't await
-      sendWebhook(screenshotDoc).catch((error) => {
-        logger.error('Failed to send webhook', { error, screenshotId: screenshotDoc?._id });
-      });
+      const planLimits = user.getPlanLimits();
+      if (planLimits.webhooks) {
+        try {
+          await queueWebhook({
+            screenshotId: screenshotDoc._id.toString(),
+            userId: user._id.toString(),
+            url: dto.webhook,
+            payload: {
+              event: 'screenshot.completed',
+              data: {
+                id: screenshotDoc._id,
+                url: screenshotDoc.url,
+                status: screenshotDoc.result.status,
+                imageUrl: screenshotDoc.result.url,
+                size: screenshotDoc.result.size,
+                duration: screenshotDoc.result.duration,
+                metadata: screenshotDoc.metadata,
+                createdAt: screenshotDoc.createdAt,
+              },
+            },
+          });
+        } catch (error) {
+          logger.error('Failed to queue webhook', {
+            error: error instanceof Error ? error.message : error,
+            screenshotId: screenshotDoc._id,
+          });
+        }
+      } else {
+        logger.warn('Webhook requested but not available on plan', {
+          screenshotId: screenshotDoc._id,
+          plan: user.subscription.plan,
+        });
+      }
     }
 
     return { screenshot: screenshotDoc, buffer };
@@ -562,75 +592,6 @@ export async function refreshScreenshotUrl(
   await cache.delete(`screenshot:${screenshotId}`);
 
   return signedUrl;
-}
-
-/**
- * Send webhook notification
- */
-async function sendWebhook(screenshot: IScreenshot): Promise<void> {
-  if (!screenshot.webhook?.url) {
-    return;
-  }
-
-  const maxAttempts = 3;
-  let attempt = screenshot.webhook.attempts + 1;
-
-  while (attempt <= maxAttempts) {
-    try {
-      const response = await fetch(screenshot.webhook.url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Webhook-Event': 'screenshot.completed',
-        },
-        body: JSON.stringify({
-          id: screenshot._id,
-          url: screenshot.url,
-          status: screenshot.result.status,
-          screenshotUrl: screenshot.result.url,
-          size: screenshot.result.size,
-          duration: screenshot.result.duration,
-          metadata: screenshot.metadata,
-          createdAt: screenshot.createdAt,
-        }),
-      });
-
-      screenshot.webhook.sentAt = new Date();
-      screenshot.webhook.status = response.status;
-      screenshot.webhook.attempts = attempt;
-      await screenshot.save();
-
-      logger.info('Webhook sent successfully', {
-        screenshotId: screenshot._id,
-        webhookUrl: screenshot.webhook.url,
-        status: response.status,
-      });
-
-      return;
-    } catch (error) {
-      logger.warn('Webhook attempt failed', {
-        screenshotId: screenshot._id,
-        attempt,
-        error: error instanceof Error ? error.message : error,
-      });
-
-      screenshot.webhook.attempts = attempt;
-      await screenshot.save();
-
-      attempt++;
-
-      // Wait before retry
-      if (attempt <= maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
-      }
-    }
-  }
-
-  logger.error('Webhook failed after max attempts', {
-    screenshotId: screenshot._id,
-    webhookUrl: screenshot.webhook.url,
-    attempts: maxAttempts,
-  });
 }
 
 /**

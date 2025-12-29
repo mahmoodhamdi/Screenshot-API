@@ -5,6 +5,7 @@
 
 import mongoose, { Schema, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { IUser, PlanLimits } from '@/types';
 import { planLimits } from '@config/index';
 
@@ -112,6 +113,11 @@ const userSchema = new Schema<IUser>(
     },
     lastLoginAt: {
       type: Date,
+    },
+    webhookSecret: {
+      type: String,
+      default: (): string => crypto.randomBytes(32).toString('hex'),
+      select: false,
     },
   },
   {
@@ -223,6 +229,16 @@ userSchema.methods.resetMonthlyUsage = async function (): Promise<void> {
 userSchema.methods.getPlanLimits = function (this: IUser): PlanLimits {
   const plan = this.subscription.plan;
   return planLimits[plan];
+};
+
+/**
+ * Regenerate the user's webhook secret
+ * @returns The new webhook secret
+ */
+userSchema.methods.regenerateWebhookSecret = async function (): Promise<string> {
+  this.webhookSecret = crypto.randomBytes(32).toString('hex');
+  await this.save();
+  return this.webhookSecret;
 };
 
 // ============================================

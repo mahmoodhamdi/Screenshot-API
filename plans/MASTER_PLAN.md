@@ -14,13 +14,13 @@ This document outlines a comprehensive review and production-readiness plan for 
 | Phase | Focus | Status | Progress |
 |-------|-------|--------|----------|
 | [Phase 1](#phase-1-security--critical-fixes) | Security & Critical Fixes | COMPLETED | 5/5 |
-| [Phase 2](#phase-2-complete-missing-implementations) | Complete Missing Implementations | IN_PROGRESS | 2/4 |
+| [Phase 2](#phase-2-complete-missing-implementations) | Complete Missing Implementations | IN_PROGRESS | 3/4 |
 | [Phase 3](#phase-3-testing--quality) | Testing & Quality | NOT_STARTED | 0/5 |
 | [Phase 4](#phase-4-performance-optimization) | Performance Optimization | NOT_STARTED | 0/4 |
 | [Phase 5](#phase-5-polish--production-ready) | Polish & Production Ready | NOT_STARTED | 0/3 |
 
 **Total Milestones:** 21
-**Completed:** 7/21
+**Completed:** 8/21
 
 ---
 
@@ -173,16 +173,17 @@ This document outlines a comprehensive review and production-readiness plan for 
   - [x] Integrate with subscription service (payment failed, subscription changed)
   - [x] Write tests (36 new tests - 22 service + 14 queue)
 
-### Milestone 2.3: Webhook Security
+### Milestone 2.3: Webhook Security ✅
 - **Prompt File:** `plans/phase2-features/M2.3-webhook-security.md`
-- **Status:** NOT_STARTED
+- **Status:** COMPLETED
+- **Completed Date:** 2025-12-29
 - **Checklist:**
-  - [ ] Require HTTPS for webhook URLs in production
-  - [ ] Add HMAC-SHA256 signature to webhook payloads
-  - [ ] Add webhook attempt persistence
-  - [ ] Implement webhook DLQ (dead letter queue)
-  - [ ] Add webhook retry with exponential backoff + jitter
-  - [ ] Write tests
+  - [x] Require HTTPS for webhook URLs in production
+  - [x] Add HMAC-SHA256 signature to webhook payloads
+  - [x] Add webhook attempt persistence
+  - [x] Implement webhook DLQ (dead letter queue)
+  - [x] Add webhook retry with exponential backoff + jitter
+  - [x] Write tests (62 new tests - 22 signature + 22 queue + 18 integration)
 
 ### Milestone 2.4: Input Validation Hardening
 - **Prompt File:** `plans/phase2-features/M2.4-input-validation.md`
@@ -378,7 +379,7 @@ Each prompt file contains:
 
 ### Last Updated: 2025-12-29
 ### Current Phase: Phase 2 - Complete Missing Implementations (IN_PROGRESS)
-### Current Milestone: M2.2 Completed
+### Current Milestone: M2.3 Completed
 ### Blockers: None
 
 ### Session Log
@@ -391,6 +392,7 @@ Each prompt file contains:
 | 2025-12-29 | 5 | M1.5 Redis Failsafe | COMPLETED | Circuit breaker, in-memory fallback, health monitoring |
 | 2025-12-29 | 6 | M2.1 Password Reset | COMPLETED | Token persistence, validation, session invalidation |
 | 2025-12-29 | 7 | M2.2 Email Service | COMPLETED | Bull queue, 8 email types, auth/subscription integration |
+| 2025-12-29 | 8 | M2.3 Webhook Security | COMPLETED | HMAC-SHA256 signatures, Bull queue, exponential backoff |
 
 ---
 

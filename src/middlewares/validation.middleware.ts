@@ -6,6 +6,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z, ZodError, ZodSchema } from 'zod';
 import { ERROR_CODES } from '@utils/constants';
+import { config } from '@config/index';
 
 // ============================================
 // Types
@@ -15,6 +16,76 @@ type ValidationTarget = 'body' | 'query' | 'params';
 
 interface ValidationOptions {
   stripUnknown?: boolean;
+}
+
+// ============================================
+// URL Validation Helpers (defined before schemas that use them)
+// ============================================
+
+/**
+ * Check if URL is safe (not internal/localhost)
+ */
+function isSafeUrlInternal(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+
+    // Block internal addresses
+    const hostname = parsed.hostname.toLowerCase();
+    const blockedHosts = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]', 'internal', 'local'];
+
+    if (blockedHosts.includes(hostname)) {
+      return false;
+    }
+
+    // Block private IP ranges
+    const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    if (ipv4Regex.test(hostname)) {
+      const parts = hostname.split('.').map(Number);
+      // 10.x.x.x
+      if (parts[0] === 10) return false;
+      // 172.16.x.x - 172.31.x.x
+      if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return false;
+      // 192.168.x.x
+      if (parts[0] === 192 && parts[1] === 168) return false;
+      // 169.254.x.x (link-local)
+      if (parts[0] === 169 && parts[1] === 254) return false;
+    }
+
+    // Block file protocol
+    if (parsed.protocol === 'file:') return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validate webhook URL
+ * - Requires HTTPS in production
+ * - Blocks internal/private IP addresses
+ */
+function isValidWebhookUrlInternal(url: string): boolean {
+  if (!url) return true; // Optional field
+
+  try {
+    const parsed = new URL(url);
+
+    // Require HTTPS in production
+    if (config.env === 'production' && parsed.protocol !== 'https:') {
+      return false;
+    }
+
+    // Allow only http and https protocols
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return false;
+    }
+
+    // Use isSafeUrl to check for internal/private addresses
+    return isSafeUrlInternal(url);
+  } catch {
+    return false;
+  }
 }
 
 // ============================================
@@ -75,7 +146,19 @@ export const createScreenshotSchema = z.object({
   blockAds: z.boolean().optional(),
   blockTrackers: z.boolean().optional(),
   waitUntil: z.enum(['load', 'domcontentloaded', 'networkidle0', 'networkidle2']).optional(),
-  webhook: z.string().url('Invalid webhook URL').optional(),
+  webhook: z
+    .string()
+    .url('Invalid webhook URL')
+    .optional()
+    .refine(
+      (url) => !url || isValidWebhookUrlInternal(url),
+      {
+        message:
+          config.env === 'production'
+            ? 'Webhook URL must use HTTPS and cannot target internal addresses'
+            : 'Webhook URL cannot target internal addresses',
+      }
+    ),
 });
 
 /**
@@ -333,40 +416,30 @@ export function isValidObjectId(id: string): boolean {
 
 /**
  * Check if URL is safe (not internal/localhost)
+ * Exported wrapper around internal function
  */
 export function isSafeUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
+  return isSafeUrlInternal(url);
+}
 
-    // Block internal addresses
-    const hostname = parsed.hostname.toLowerCase();
-    const blockedHosts = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]', 'internal', 'local'];
+/**
+ * Validate webhook URL
+ * - Requires HTTPS in production
+ * - Blocks internal/private IP addresses
+ * Exported wrapper around internal function
+ */
+export function isValidWebhookUrl(url: string): boolean {
+  return isValidWebhookUrlInternal(url);
+}
 
-    if (blockedHosts.includes(hostname)) {
-      return false;
-    }
-
-    // Block private IP ranges
-    const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-    if (ipv4Regex.test(hostname)) {
-      const parts = hostname.split('.').map(Number);
-      // 10.x.x.x
-      if (parts[0] === 10) return false;
-      // 172.16.x.x - 172.31.x.x
-      if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return false;
-      // 192.168.x.x
-      if (parts[0] === 192 && parts[1] === 168) return false;
-      // 169.254.x.x (link-local)
-      if (parts[0] === 169 && parts[1] === 254) return false;
-    }
-
-    // Block file protocol
-    if (parsed.protocol === 'file:') return false;
-
-    return true;
-  } catch {
-    return false;
+/**
+ * Get webhook validation error message based on environment
+ */
+export function getWebhookValidationMessage(): string {
+  if (config.env === 'production') {
+    return 'Webhook URL must use HTTPS and cannot target internal addresses';
   }
+  return 'Webhook URL cannot target internal addresses';
 }
 
 // ============================================
@@ -413,6 +486,8 @@ export default {
   sanitizeString,
   isValidObjectId,
   isSafeUrl,
+  isValidWebhookUrl,
+  getWebhookValidationMessage,
   // Schemas
   createScreenshotSchema,
   listScreenshotsSchema,

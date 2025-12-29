@@ -82,6 +82,9 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'debug']).default('info'),
   LOG_FORMAT: z.enum(['combined', 'common', 'dev', 'short', 'tiny']).default('combined'),
 
+  // Webhooks
+  WEBHOOK_SECRET: z.string().optional(),
+
   // CORS
   CORS_ORIGIN: z.string().default('*'),
   CORS_CREDENTIALS: z
@@ -291,6 +294,9 @@ export const config = {
     origin: env.CORS_ORIGIN,
     credentials: env.CORS_CREDENTIALS,
   },
+
+  // Webhook default secret (used if user doesn't have one)
+  webhookSecret: env.WEBHOOK_SECRET,
 };
 
 export default config;

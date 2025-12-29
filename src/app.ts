@@ -1340,14 +1340,45 @@ function escapeHtml(text: string): string {
 // API version prefix
 app.use(`/api/${config.api.version}`, routes);
 
-// Root health check
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({
+// Root health check with detailed service status
+app.get('/health', async (_req: Request, res: Response) => {
+  const { checkRedisHealth, getRedisStatus } = await import('@config/redis');
+  const { getRateLimitCircuitState, getRateLimitCircuitStats } =
+    await import('@middlewares/rateLimit.middleware');
+
+  // Check Redis health
+  const redisHealth = await checkRedisHealth();
+  const circuitState = getRateLimitCircuitState();
+  const circuitStats = getRateLimitCircuitStats();
+
+  // Determine overall health status
+  const isHealthy = redisHealth.connected;
+  const isDegraded = !redisHealth.connected && circuitState !== 'CLOSED';
+
+  res.status(isHealthy ? 200 : isDegraded ? 200 : 503).json({
     success: true,
-    status: 'healthy',
+    status: isHealthy ? 'healthy' : isDegraded ? 'degraded' : 'unhealthy',
     service: 'screenshot-api',
     version: config.api.version,
     timestamp: new Date().toISOString(),
+    services: {
+      redis: {
+        status: redisHealth.connected ? 'up' : 'down',
+        connectionStatus: getRedisStatus(),
+        latencyMs: redisHealth.latencyMs,
+        error: redisHealth.error,
+      },
+      rateLimiter: {
+        circuitBreaker: circuitState,
+        usingFallback: circuitState === 'OPEN',
+        stats: {
+          failures: circuitStats.failures,
+          successes: circuitStats.successes,
+          totalRequests: circuitStats.totalRequests,
+          fallbackRequests: circuitStats.fallbackRequests,
+        },
+      },
+    },
   });
 });
 

@@ -105,6 +105,7 @@ export const checkRedisHealth = async (): Promise<{
   connected: boolean;
   status: string;
   latencyMs?: number;
+  error?: string;
 }> => {
   try {
     if (!redisClient || redisClient.status !== 'ready') {
@@ -128,8 +129,73 @@ export const checkRedisHealth = async (): Promise<{
     return {
       connected: false,
       status: 'error',
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
+};
+
+// ============================================
+// Health Check Monitoring
+// ============================================
+
+let healthCheckInterval: NodeJS.Timeout | null = null;
+const HIGH_LATENCY_THRESHOLD_MS = 100;
+
+/**
+ * Start periodic Redis health monitoring
+ * @param intervalMs - Check interval in milliseconds (default: 30000)
+ * @param onHealthChange - Callback when health status changes
+ */
+export const startRedisHealthCheck = (
+  intervalMs: number = 30000,
+  onHealthChange?: (healthy: boolean, latency?: number, error?: string) => void
+): void => {
+  if (healthCheckInterval) {
+    clearInterval(healthCheckInterval);
+  }
+
+  let lastHealthy: boolean | null = null;
+
+  healthCheckInterval = setInterval(async () => {
+    const health = await checkRedisHealth();
+
+    // Log health issues
+    if (!health.connected) {
+      logger.error('Redis health check failed', { error: health.error, status: health.status });
+    } else if (health.latencyMs && health.latencyMs > HIGH_LATENCY_THRESHOLD_MS) {
+      logger.warn('Redis latency is high', { latencyMs: health.latencyMs });
+    }
+
+    // Notify on health change
+    if (lastHealthy !== null && lastHealthy !== health.connected) {
+      onHealthChange?.(health.connected, health.latencyMs, health.error);
+    }
+
+    lastHealthy = health.connected;
+  }, intervalMs);
+
+  // Don't prevent process exit
+  healthCheckInterval.unref();
+
+  logger.info(`Redis health check started (interval: ${intervalMs}ms)`);
+};
+
+/**
+ * Stop Redis health monitoring
+ */
+export const stopRedisHealthCheck = (): void => {
+  if (healthCheckInterval) {
+    clearInterval(healthCheckInterval);
+    healthCheckInterval = null;
+    logger.info('Redis health check stopped');
+  }
+};
+
+/**
+ * Get current Redis status
+ */
+export const getRedisStatus = (): string => {
+  return redisClient?.status || 'disconnected';
 };
 
 // ============================================
@@ -448,6 +514,10 @@ export const redis = {
     if (!redisClient) return -2;
     return redisClient.ttl(key);
   },
+  ping: async (): Promise<string> => {
+    if (!redisClient) throw new Error('Redis not connected');
+    return redisClient.ping();
+  },
 };
 
 /**
@@ -474,6 +544,9 @@ export default {
   disconnect: disconnectRedis,
   getClient: getRedisClient,
   checkHealth: checkRedisHealth,
+  startHealthCheck: startRedisHealthCheck,
+  stopHealthCheck: stopRedisHealthCheck,
+  getStatus: getRedisStatus,
   cache,
   rateLimit: {
     getKey: getRateLimitKey,

@@ -7,9 +7,16 @@ import http from 'http';
 import app from './app';
 import config from '@config/index';
 import { connectDatabase, disconnectDatabase } from '@config/database';
-import { connectRedis, disconnectRedis, getRedisClient } from '@config/redis';
+import {
+  connectRedis,
+  disconnectRedis,
+  getRedisClient,
+  startRedisHealthCheck,
+  stopRedisHealthCheck,
+} from '@config/redis';
 import { closeBrowserPool } from '@config/puppeteer';
 import logger from '@utils/logger';
+import { alertRedisHealthFailed, alertRedisHighLatency } from '@utils/alerts';
 
 // ============================================
 // Server Configuration
@@ -37,6 +44,17 @@ async function startServer(): Promise<void> {
     try {
       await connectRedis();
       logger.info('Redis connected successfully');
+
+      // Start Redis health monitoring
+      const healthCheckInterval = parseInt(process.env.REDIS_HEALTH_CHECK_INTERVAL || '30000', 10);
+      startRedisHealthCheck(healthCheckInterval, (healthy, latency, error) => {
+        if (!healthy && error) {
+          alertRedisHealthFailed(error);
+        } else if (healthy && latency && latency > 100) {
+          alertRedisHighLatency(latency);
+        }
+      });
+      logger.info(`Redis health monitoring started (interval: ${healthCheckInterval}ms)`);
     } catch (redisError) {
       logger.warn('Redis connection failed, continuing without Redis cache', {
         error: redisError instanceof Error ? redisError.message : 'Unknown error',
@@ -100,9 +118,11 @@ function gracefulShutdown(signal: string): void {
       await closeBrowserPool();
       logger.info('Browser pool closed');
 
-      // Disconnect Redis
+      // Stop Redis health monitoring and disconnect
       const redisClient = getRedisClient();
       if (redisClient) {
+        logger.info('Stopping Redis health monitoring...');
+        stopRedisHealthCheck();
         logger.info('Disconnecting Redis...');
         await disconnectRedis();
         logger.info('Redis disconnected');

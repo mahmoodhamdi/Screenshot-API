@@ -24,6 +24,8 @@ export {
   ipRateLimit,
   concurrentLimit,
   adaptiveAuthRateLimit,
+  getRateLimitCircuitState,
+  getRateLimitCircuitStats,
 } from './rateLimit.middleware';
 
 export {

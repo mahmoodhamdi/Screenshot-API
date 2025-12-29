@@ -222,15 +222,85 @@ const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Email is required', 400, ERROR_CODES.VALIDATION_FAILED);
   }
 
-  const resetToken = await authService.generatePasswordResetToken(email);
+  const result = await authService.generatePasswordResetToken(email);
 
-  // In production, send this via email
+  // In production, send this via email (covered in M2.2)
+  // if (result) {
+  //   await emailService.sendPasswordResetEmail(result.user.email, result.token);
+  // }
+
   res.json({
     success: true,
     message: 'If an account exists with this email, a password reset link will be sent.',
-    // Only include token in development
-    ...(process.env.NODE_ENV === 'development' && resetToken && { resetToken }),
+    // Only include token in development/test (not production)
+    ...(process.env.NODE_ENV !== 'production' && result && { resetToken: result.token }),
   });
+});
+
+/**
+ * Validate password reset token
+ * GET /api/v1/auth/validate-reset-token
+ */
+const validateResetToken = asyncHandler(async (req: Request, res: Response) => {
+  const { token } = req.query;
+
+  if (!token || typeof token !== 'string') {
+    res.json({
+      success: true,
+      data: {
+        valid: false,
+        message: 'Token is required',
+      },
+    });
+    return;
+  }
+
+  const user = await authService.validatePasswordResetToken(token);
+
+  res.json({
+    success: true,
+    data: {
+      valid: !!user,
+      message: user ? 'Token is valid' : 'Token is invalid or expired',
+    },
+  });
+});
+
+/**
+ * Reset password with token
+ * POST /api/v1/auth/reset-password
+ */
+const resetPasswordHandler = asyncHandler(async (req: Request, res: Response) => {
+  const { token, password } = req.body;
+
+  if (!token) {
+    throw new AppError('Reset token is required', 400, ERROR_CODES.VALIDATION_FAILED);
+  }
+
+  if (!password) {
+    throw new AppError('New password is required', 400, ERROR_CODES.VALIDATION_FAILED);
+  }
+
+  try {
+    const result = await authService.resetPassword(token, password);
+
+    res.json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    const err = error as Error & { code?: string };
+
+    if (err.code === 'INVALID_RESET_TOKEN') {
+      throw new AppError(err.message, 400, ERROR_CODES.AUTH_TOKEN_INVALID);
+    }
+
+    if (err.code === 'WEAK_PASSWORD') {
+      throw new AppError(err.message, 400, ERROR_CODES.VALIDATION_FAILED);
+    }
+
+    throw error;
+  }
 });
 
 /**
@@ -389,6 +459,8 @@ export default {
   me,
   verifyEmail,
   forgotPassword,
+  validateResetToken,
+  resetPasswordHandler,
   changePassword,
   createApiKey,
   listApiKeys,

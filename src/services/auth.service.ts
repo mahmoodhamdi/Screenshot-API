@@ -593,28 +593,108 @@ export async function changePassword(
 /**
  * Generate password reset token
  * @param email - User email
- * @returns Reset token (or null if user not found - don't reveal user existence)
+ * @returns Object with token and user (or null if user not found - don't reveal user existence)
  */
-export async function generatePasswordResetToken(email: string): Promise<string | null> {
-  const user = await User.findByEmail(email);
+export async function generatePasswordResetToken(
+  email: string
+): Promise<{ token: string; user: IUser } | null> {
+  const user = await User.findOne({ email: email.toLowerCase() }).select(
+    '+passwordResetToken +passwordResetExpires'
+  );
+
   if (!user) {
     return null;
   }
 
-  // Generate reset token
-  const resetToken = crypto.randomBytes(32).toString('hex');
-  // In a full implementation, you'd store this hash in the user document
-  // and use it to verify the reset token later
-  const _resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-  void _resetTokenHash; // Silence unused variable warning
+  // Generate random token
+  const token = crypto.randomBytes(32).toString('hex');
 
-  // Store in user document (in a real app, you'd have a separate token field)
-  // For now, we'll return the token directly
-  // In production, you'd email this to the user
+  // Hash token for storage (we only store the hash)
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  // Set token expiry (1 hour)
+  const expires = new Date(Date.now() + 60 * 60 * 1000);
+
+  // Save to user document
+  user.passwordResetToken = hashedToken;
+  user.passwordResetExpires = expires;
+  await user.save();
 
   logger.info('Password reset token generated', { userId: user._id });
 
-  return resetToken;
+  // Return unhashed token (to send in email)
+  return { token, user };
+}
+
+/**
+ * Validate password reset token
+ * @param token - Reset token (unhashed)
+ * @returns User if token is valid, null otherwise
+ */
+export async function validatePasswordResetToken(token: string): Promise<IUser | null> {
+  // Hash the provided token to compare with stored hash
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  // Find user with matching token that hasn't expired
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: new Date() },
+  }).select('+passwordResetToken +passwordResetExpires');
+
+  if (!user) {
+    logger.warn('Invalid or expired password reset token');
+    return null;
+  }
+
+  return user;
+}
+
+/**
+ * Reset password using a valid reset token
+ * @param token - Reset token (unhashed)
+ * @param newPassword - New password
+ * @returns Success result
+ */
+export async function resetPassword(
+  token: string,
+  newPassword: string
+): Promise<{ success: boolean; message: string }> {
+  // Validate token
+  const user = await validatePasswordResetToken(token);
+
+  if (!user) {
+    const error = new Error('Password reset token is invalid or has expired') as Error & {
+      code: string;
+    };
+    error.code = 'INVALID_RESET_TOKEN';
+    throw error;
+  }
+
+  // Validate new password length
+  if (newPassword.length < 8) {
+    const error = new Error('Password must be at least 8 characters') as Error & { code: string };
+    error.code = 'WEAK_PASSWORD';
+    throw error;
+  }
+
+  // Update password (will be hashed by pre-save middleware)
+  user.password = newPassword;
+
+  // Clear reset token fields
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+
+  // Invalidate all existing sessions (logout everywhere)
+  user.refreshTokens = [];
+
+  await user.save();
+
+  logger.info('Password reset successful', { userId: user._id });
+
+  return {
+    success: true,
+    message: 'Password has been reset successfully',
+  };
 }
 
 // ============================================
@@ -685,6 +765,8 @@ export default {
   comparePassword,
   changePassword,
   generatePasswordResetToken,
+  validatePasswordResetToken,
+  resetPassword,
   generateVerificationToken,
   verifyEmail,
 };

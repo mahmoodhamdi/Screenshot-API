@@ -26,6 +26,8 @@ import {
   comparePassword,
   changePassword,
   generatePasswordResetToken,
+  validatePasswordResetToken,
+  resetPassword,
   generateVerificationToken,
   verifyEmail,
 } from '@services/auth.service';
@@ -382,17 +384,176 @@ describe('Auth Service', () => {
     });
 
     describe('generatePasswordResetToken', () => {
-      it('should generate a password reset token', async () => {
-        const token = await generatePasswordResetToken(testUser.email);
+      it('should generate a password reset token for existing user', async () => {
+        const result = await generatePasswordResetToken(testUser.email);
 
-        expect(token).toBeDefined();
-        expect(typeof token).toBe('string');
-        expect(token!.length).toBeGreaterThan(20);
+        expect(result).toBeDefined();
+        expect(result).not.toBeNull();
+        expect(result?.token).toBeDefined();
+        expect(typeof result?.token).toBe('string');
+        expect(result!.token.length).toBe(64); // 32 bytes as hex = 64 chars
+        expect(result?.user).toBeDefined();
+        expect(result?.user.email).toBe(testUser.email);
       });
 
       it('should return null for non-existent email', async () => {
-        const token = await generatePasswordResetToken('nonexistent@example.com');
-        expect(token).toBeNull();
+        const result = await generatePasswordResetToken('nonexistent@example.com');
+        expect(result).toBeNull();
+      });
+
+      it('should hash the token before storing', async () => {
+        const result = await generatePasswordResetToken(testUser.email);
+
+        // Get user from database with reset token
+        const userWithToken = await User.findById(testUser._id).select(
+          '+passwordResetToken +passwordResetExpires'
+        );
+
+        expect(userWithToken?.passwordResetToken).toBeDefined();
+        // Stored token should be different from returned token (it's hashed)
+        expect(userWithToken?.passwordResetToken).not.toBe(result?.token);
+        // Should be a SHA256 hash (64 hex chars)
+        expect(userWithToken?.passwordResetToken?.length).toBe(64);
+      });
+
+      it('should set expiry to 1 hour in the future', async () => {
+        const beforeGeneration = new Date();
+        await generatePasswordResetToken(testUser.email);
+        const afterGeneration = new Date();
+
+        const userWithToken = await User.findById(testUser._id).select(
+          '+passwordResetToken +passwordResetExpires'
+        );
+
+        expect(userWithToken?.passwordResetExpires).toBeDefined();
+
+        // Expiry should be approximately 1 hour from now
+        const expiresTime = userWithToken!.passwordResetExpires!.getTime();
+        const oneHourFromBefore = beforeGeneration.getTime() + 60 * 60 * 1000;
+        const oneHourFromAfter = afterGeneration.getTime() + 60 * 60 * 1000;
+
+        expect(expiresTime).toBeGreaterThanOrEqual(oneHourFromBefore);
+        expect(expiresTime).toBeLessThanOrEqual(oneHourFromAfter);
+      });
+
+      it('should overwrite existing token when generating new one', async () => {
+        // Generate first token
+        const result1 = await generatePasswordResetToken(testUser.email);
+        const user1 = await User.findById(testUser._id).select('+passwordResetToken');
+
+        // Generate second token
+        const result2 = await generatePasswordResetToken(testUser.email);
+        const user2 = await User.findById(testUser._id).select('+passwordResetToken');
+
+        // Tokens should be different
+        expect(result1?.token).not.toBe(result2?.token);
+        expect(user1?.passwordResetToken).not.toBe(user2?.passwordResetToken);
+      });
+    });
+
+    describe('validatePasswordResetToken', () => {
+      it('should return user for valid token', async () => {
+        const result = await generatePasswordResetToken(testUser.email);
+        expect(result).not.toBeNull();
+
+        const user = await validatePasswordResetToken(result!.token);
+
+        expect(user).toBeDefined();
+        expect(user).not.toBeNull();
+        expect(user!._id.toString()).toBe(testUser._id.toString());
+      });
+
+      it('should return null for invalid token', async () => {
+        const user = await validatePasswordResetToken('invalid-token-string-1234567890abcdef');
+        expect(user).toBeNull();
+      });
+
+      it('should return null for expired token', async () => {
+        // Generate token
+        const result = await generatePasswordResetToken(testUser.email);
+
+        // Manually expire the token
+        await User.findByIdAndUpdate(testUser._id, {
+          passwordResetExpires: new Date(Date.now() - 1000), // 1 second ago
+        });
+
+        const user = await validatePasswordResetToken(result!.token);
+        expect(user).toBeNull();
+      });
+
+      it('should return null for tampered token', async () => {
+        await generatePasswordResetToken(testUser.email);
+
+        // Try with a random valid-looking token
+        const tamperedToken = 'a'.repeat(64);
+        const user = await validatePasswordResetToken(tamperedToken);
+
+        expect(user).toBeNull();
+      });
+    });
+
+    describe('resetPassword', () => {
+      it('should update password with valid token', async () => {
+        const result = await generatePasswordResetToken(testUser.email);
+        const newPassword = 'NewSecurePassword123!';
+
+        const resetResult = await resetPassword(result!.token, newPassword);
+
+        expect(resetResult.success).toBe(true);
+        expect(resetResult.message).toContain('successfully');
+
+        // Should be able to login with new password
+        const loginResult = await loginUser(testUser.email, newPassword);
+        expect(loginResult.user).toBeDefined();
+      });
+
+      it('should clear reset token after use', async () => {
+        const result = await generatePasswordResetToken(testUser.email);
+        const newPassword = 'NewSecurePassword123!';
+
+        await resetPassword(result!.token, newPassword);
+
+        // Token should no longer work
+        const user = await validatePasswordResetToken(result!.token);
+        expect(user).toBeNull();
+      });
+
+      it('should invalidate all existing sessions', async () => {
+        // Login to create refresh tokens
+        const loginResult = await loginUser(testUser.email, testUserData.password);
+
+        // Generate reset token and reset password
+        const resetTokenResult = await generatePasswordResetToken(testUser.email);
+        await resetPassword(resetTokenResult!.token, 'NewSecurePassword123!');
+
+        // Old refresh token should no longer work
+        await expect(refreshAccessToken(loginResult.tokens.refreshToken)).rejects.toThrow();
+      });
+
+      it('should throw error for invalid token', async () => {
+        await expect(
+          resetPassword('invalid-token-1234567890abcdef1234567890abcdef', 'NewPassword123!')
+        ).rejects.toThrow('invalid or has expired');
+      });
+
+      it('should throw error for weak password', async () => {
+        const result = await generatePasswordResetToken(testUser.email);
+
+        await expect(resetPassword(result!.token, 'short')).rejects.toThrow(
+          'at least 8 characters'
+        );
+      });
+
+      it('should not allow using the same token twice', async () => {
+        const result = await generatePasswordResetToken(testUser.email);
+
+        // First reset should succeed
+        await resetPassword(result!.token, 'FirstNewPassword123!');
+
+        // Second reset with same token should fail
+        await expect(resetPassword(result!.token, 'SecondNewPassword123!')).rejects.toThrow(
+          'invalid or has expired'
+        );
       });
     });
   });

@@ -269,7 +269,108 @@ router.post('/verify-email', authRateLimit, authController.verifyEmail);
  *       429:
  *         $ref: '#/components/responses/RateLimitError'
  */
-router.post('/forgot-password', strictRateLimit, authController.forgotPassword);
+router.post(
+  '/forgot-password',
+  strictRateLimit,
+  validators.forgotPassword,
+  authController.forgotPassword
+);
+
+/**
+ * @openapi
+ * /auth/validate-reset-token:
+ *   get:
+ *     summary: Validate password reset token
+ *     description: Check if a password reset token is valid and not expired
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Password reset token
+ *     responses:
+ *       200:
+ *         description: Token validation result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     valid:
+ *                       type: boolean
+ *                       example: true
+ *                     message:
+ *                       type: string
+ *                       example: Token is valid
+ *       429:
+ *         $ref: '#/components/responses/RateLimitError'
+ */
+router.get('/validate-reset-token', defaultRateLimit, authController.validateResetToken);
+
+/**
+ * @openapi
+ * /auth/reset-password:
+ *   post:
+ *     summary: Reset password with token
+ *     description: Reset user's password using a valid reset token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - password
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Password reset token received via email
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *                 description: New password (min 8 chars, requires uppercase, lowercase, number)
+ *           example:
+ *             token: abc123def456...
+ *             password: NewSecurePassword123!
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Password has been reset successfully
+ *       400:
+ *         description: Invalid token or weak password
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       429:
+ *         $ref: '#/components/responses/RateLimitError'
+ */
+router.post(
+  '/reset-password',
+  strictRateLimit,
+  validators.resetPassword,
+  authController.resetPasswordHandler
+);
 
 // ============================================
 // Protected Routes (require authentication)

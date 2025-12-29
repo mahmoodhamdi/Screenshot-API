@@ -75,6 +75,8 @@ export interface IUser extends Document {
   usage: IUserUsage;
   refreshTokens: IRefreshToken[];
   verificationToken?: string;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;

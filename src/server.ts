@@ -17,6 +17,7 @@ import {
 import { closeBrowserPool } from '@config/puppeteer';
 import logger from '@utils/logger';
 import { alertRedisHealthFailed, alertRedisHighLatency } from '@utils/alerts';
+import { warmCaches } from '@utils/cache';
 
 // ============================================
 // Server Configuration
@@ -55,6 +56,13 @@ async function startServer(): Promise<void> {
         }
       });
       logger.info(`Redis health monitoring started (interval: ${healthCheckInterval}ms)`);
+
+      // Warm caches after Redis is ready
+      warmCaches().catch((error) => {
+        logger.error('Cache warming failed', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      });
     } catch (redisError) {
       logger.warn('Redis connection failed, continuing without Redis cache', {
         error: redisError instanceof Error ? redisError.message : 'Unknown error',

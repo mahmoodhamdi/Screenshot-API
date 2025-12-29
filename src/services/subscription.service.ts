@@ -12,6 +12,7 @@ import logger from '@utils/logger';
 import { AppError } from '@middlewares/error.middleware';
 import { ERROR_CODES } from '@utils/constants';
 import { queueEmail } from '@queues/email.queue';
+import { getCachedPlans, invalidateUserLimitsCache } from '@utils/cache';
 
 // ============================================
 // Stripe Client
@@ -129,8 +130,9 @@ export async function getOrCreateCustomer(user: IUser): Promise<string> {
   user.subscription.stripeCustomerId = customer.id;
   await user.save();
 
-  // Invalidate cache
+  // Invalidate caches
   await invalidateCache(`user:${user._id}`);
+  await invalidateUserLimitsCache(user._id.toString());
 
   logger.info('Stripe customer created', {
     userId: user._id,
@@ -326,8 +328,9 @@ export async function cancelSubscription(user: IUser, immediately = false): Prom
     });
   }
 
-  // Invalidate cache
+  // Invalidate caches
   await invalidateCache(`user:${user._id}`);
+  await invalidateUserLimitsCache(user._id.toString());
 
   logger.info('Subscription cancelled', {
     userId: user._id,
@@ -362,8 +365,9 @@ export async function resumeSubscription(user: IUser): Promise<void> {
     cancel_at_period_end: false,
   });
 
-  // Invalidate cache
+  // Invalidate caches
   await invalidateCache(`user:${user._id}`);
+  await invalidateUserLimitsCache(user._id.toString());
 
   logger.info('Subscription resumed', {
     userId: user._id,
@@ -415,8 +419,9 @@ export async function changePlan(user: IUser, newPlan: Exclude<PlanType, 'free'>
   user.subscription.plan = newPlan;
   await user.save();
 
-  // Invalidate cache
+  // Invalidate caches
   await invalidateCache(`user:${user._id}`);
+  await invalidateUserLimitsCache(user._id.toString());
 
   // Send subscription changed email
   try {
@@ -523,8 +528,9 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session): Promise
 
   await user.save();
 
-  // Invalidate cache
+  // Invalidate caches
   await invalidateCache(`user:${userId}`);
+  await invalidateUserLimitsCache(userId);
 
   logger.info('Checkout completed', {
     userId,
@@ -578,8 +584,9 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription): Prom
 
   await user.save();
 
-  // Invalidate cache
+  // Invalidate caches
   await invalidateCache(`user:${userId}`);
+  await invalidateUserLimitsCache(userId);
 
   logger.info('Subscription updated', {
     userId,
@@ -611,8 +618,9 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
 
   await user.save();
 
-  // Invalidate cache
+  // Invalidate caches
   await invalidateCache(`user:${userId}`);
+  await invalidateUserLimitsCache(userId);
 
   logger.info('Subscription deleted', { userId });
 }
@@ -638,6 +646,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
     user.subscription.status = 'active';
     await user.save();
     await invalidateCache(`user:${user._id}`);
+    await invalidateUserLimitsCache(user._id.toString());
   }
 
   logger.info('Payment succeeded', {
@@ -666,8 +675,9 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
   user.subscription.status = 'past_due';
   await user.save();
 
-  // Invalidate cache
+  // Invalidate caches
   await invalidateCache(`user:${user._id}`);
+  await invalidateUserLimitsCache(user._id.toString());
 
   logger.warn('Payment failed', {
     userId: user._id,
@@ -727,7 +737,31 @@ export function getUsageStats(user: IUser): UsageStatsDTO {
 }
 
 /**
- * Get available plans with pricing
+ * Get available plans with pricing (cached)
+ */
+export async function getAvailablePlansAsync(): Promise<
+  Array<{
+    plan: PlanType;
+    name: string;
+    description: string;
+    price: number;
+    screenshotsPerMonth: number;
+    priceId?: string;
+  }>
+> {
+  const cachedPlans = await getCachedPlans();
+  return cachedPlans.map((p) => ({
+    plan: p.plan,
+    name: p.name,
+    description: p.description,
+    price: p.price,
+    screenshotsPerMonth: p.screenshotsPerMonth,
+    priceId: p.plan !== 'free' ? config.stripe.priceIds[p.plan as Exclude<PlanType, 'free'>] : undefined,
+  }));
+}
+
+/**
+ * Get available plans with pricing (sync, for backward compatibility)
  */
 export function getAvailablePlans(): Array<{
   plan: PlanType;
@@ -761,4 +795,5 @@ export default {
   handleWebhookEvent,
   getUsageStats,
   getAvailablePlans,
+  getAvailablePlansAsync,
 };

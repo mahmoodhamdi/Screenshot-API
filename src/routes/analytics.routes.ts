@@ -6,12 +6,16 @@
 import { Router } from 'express';
 import analyticsController from '@controllers/analytics.controller';
 import { authenticateAny, defaultRateLimit } from '@middlewares/index';
+import { analyticsCache, skipCacheOnFresh } from '@middlewares/cache.middleware';
 
 const router = Router();
 
 // All analytics routes require authentication
 router.use(authenticateAny);
 router.use(defaultRateLimit);
+
+// Allow bypassing cache with ?fresh=true
+router.use(skipCacheOnFresh);
 
 // ============================================
 // Analytics Routes
@@ -105,7 +109,7 @@ router.use(defaultRateLimit);
  *       429:
  *         $ref: '#/components/responses/RateLimitExceeded'
  */
-router.get('/overview', analyticsController.overview);
+router.get('/overview', analyticsCache(30), analyticsController.overview);
 
 /**
  * @openapi
@@ -219,7 +223,7 @@ router.get('/overview', analyticsController.overview);
  *       429:
  *         $ref: '#/components/responses/RateLimitExceeded'
  */
-router.get('/screenshots', analyticsController.screenshots);
+router.get('/screenshots', analyticsCache(60), analyticsController.screenshots);
 
 /**
  * @openapi
@@ -315,7 +319,7 @@ router.get('/screenshots', analyticsController.screenshots);
  *       429:
  *         $ref: '#/components/responses/RateLimitExceeded'
  */
-router.get('/usage', analyticsController.usage);
+router.get('/usage', analyticsCache(60), analyticsController.usage);
 
 /**
  * @openapi
@@ -410,7 +414,7 @@ router.get('/usage', analyticsController.usage);
  *       429:
  *         $ref: '#/components/responses/RateLimitExceeded'
  */
-router.get('/errors', analyticsController.errors);
+router.get('/errors', analyticsCache(60), analyticsController.errors);
 
 /**
  * @openapi
@@ -498,7 +502,7 @@ router.get('/errors', analyticsController.errors);
  *       429:
  *         $ref: '#/components/responses/RateLimitExceeded'
  */
-router.get('/urls', analyticsController.popularUrls);
+router.get('/urls', analyticsCache(60), analyticsController.popularUrls);
 
 /**
  * @openapi
@@ -600,6 +604,6 @@ router.get('/urls', analyticsController.popularUrls);
  *       429:
  *         $ref: '#/components/responses/RateLimitExceeded'
  */
-router.get('/api-keys/:id', analyticsController.apiKeyStats);
+router.get('/api-keys/:id', analyticsCache(60), analyticsController.apiKeyStats);
 
 export default router;

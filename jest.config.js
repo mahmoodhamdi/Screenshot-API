@@ -22,6 +22,7 @@ module.exports = {
     '^@routes/(.*)$': '<rootDir>/src/routes/$1',
     '^@utils/(.*)$': '<rootDir>/src/utils/$1',
     '^@types/(.*)$': '<rootDir>/src/types/$1',
+    '^@queues/(.*)$': '<rootDir>/src/queues/$1',
   },
   collectCoverageFrom: [
     'src/**/*.ts',

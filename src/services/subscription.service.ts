@@ -11,6 +11,7 @@ import { invalidateCache } from '@config/redis';
 import logger from '@utils/logger';
 import { AppError } from '@middlewares/error.middleware';
 import { ERROR_CODES } from '@utils/constants';
+import { queueEmail } from '@queues/email.queue';
 
 // ============================================
 // Stripe Client
@@ -407,12 +408,30 @@ export async function changePlan(user: IUser, newPlan: Exclude<PlanType, 'free'>
     },
   });
 
+  // Get old plan name before updating
+  const oldPlanName = PLAN_FEATURES[user.subscription.plan].name;
+
   // Update user
   user.subscription.plan = newPlan;
   await user.save();
 
   // Invalidate cache
   await invalidateCache(`user:${user._id}`);
+
+  // Send subscription changed email
+  try {
+    await queueEmail.subscriptionChanged(user.email, {
+      oldPlan: oldPlanName,
+      newPlan: PLAN_FEATURES[newPlan].name,
+      effectiveDate: new Date().toLocaleDateString(),
+    });
+    logger.debug('Subscription changed email queued', { userId: user._id });
+  } catch (error) {
+    logger.error('Failed to queue subscription changed email', {
+      userId: user._id,
+      error: (error as Error).message,
+    });
+  }
 
   logger.info('Plan changed', {
     userId: user._id,
@@ -655,7 +674,24 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
     amount: invoice.amount_due,
   });
 
-  // TODO: Send email notification to user
+  // Send payment failed email notification
+  try {
+    const retryDate = invoice.next_payment_attempt
+      ? new Date(invoice.next_payment_attempt * 1000).toLocaleDateString()
+      : undefined;
+
+    await queueEmail.paymentFailed(user.email, {
+      planName: PLAN_FEATURES[user.subscription.plan].name,
+      amount: `$${((invoice.amount_due || 0) / 100).toFixed(2)}`,
+      retryDate,
+    });
+    logger.debug('Payment failed email queued', { userId: user._id });
+  } catch (error) {
+    logger.error('Failed to queue payment failed email', {
+      userId: user._id,
+      error: (error as Error).message,
+    });
+  }
 }
 
 // ============================================

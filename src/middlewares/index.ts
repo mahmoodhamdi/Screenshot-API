@@ -64,3 +64,15 @@ export {
 } from './validation.middleware';
 
 export { csrfToken, csrfProtection, conditionalCsrf, csrfErrorHandler } from './csrf.middleware';
+
+export {
+  generateNonce,
+  getNonce,
+  nonceMiddleware,
+  strictCSPMiddleware,
+  docsCSPMiddleware,
+  apiSecurityMiddleware,
+  routeAwareSecurityMiddleware,
+  isDocsRoute,
+  isApiRoute,
+} from './nonce.middleware';

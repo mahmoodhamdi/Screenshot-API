@@ -33,6 +33,7 @@ export interface LandingPageConfig {
   canonicalUrl?: string;
   ogImage?: string;
   twitterHandle?: string;
+  nonce?: string;
 }
 
 /**
@@ -182,7 +183,7 @@ export function generateLandingPage(config: LandingPageConfig = {}): string {
   <!-- JSON-LD Structured Data -->
   <script type="application/ld+json">${JSON.stringify(structuredData)}</script>
 
-  <style>${styles}</style>
+  <style${config.nonce ? ` nonce="${config.nonce}"` : ''}>${styles}</style>
 </head>
 <body>
   <!-- Skip to Main Content Link for Accessibility -->
@@ -201,7 +202,7 @@ export function generateLandingPage(config: LandingPageConfig = {}): string {
 
   ${footer}
 
-  <script>${scripts}</script>
+  <script${config.nonce ? ` nonce="${config.nonce}"` : ''}>${scripts}</script>
 </body>
 </html>`;
 }

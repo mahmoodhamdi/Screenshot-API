@@ -10,13 +10,14 @@ export interface ResetPasswordPageConfig {
   baseUrl?: string;
   token?: string;
   error?: string;
+  csrfToken?: string;
 }
 
 /**
  * Generate reset password form HTML
  */
 export function generateResetPasswordForm(config: ResetPasswordPageConfig = {}): string {
-  const { token = '' } = config;
+  const { token = '', csrfToken = '' } = config;
 
   const submitButton = generateFormButton({
     text: 'Reset Password',
@@ -71,6 +72,7 @@ export function generateResetPasswordForm(config: ResetPasswordPageConfig = {}):
 
           <!-- Reset Password Form -->
           <form id="reset-form" novalidate>
+            <input type="hidden" name="_csrf" id="csrf-token" value="${csrfToken}">
             <input type="hidden" id="reset-token" name="token" value="${token}">
 
             <!-- New Password -->
@@ -513,9 +515,14 @@ export function getResetPasswordScripts(): string {
       if (tokenInput) tokenInput.value = token;
 
       try {
+        const csrfToken = document.getElementById('csrf-token')?.value || '';
         const response = await fetch('/api/v1/auth/validate-reset-token', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          credentials: 'same-origin',
           body: JSON.stringify({ token }),
         });
 
@@ -628,9 +635,14 @@ export function getResetPasswordScripts(): string {
       setLoading(true);
 
       try {
+        const csrfToken = document.getElementById('csrf-token')?.value || '';
         const response = await fetch('/api/v1/auth/reset-password', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          credentials: 'same-origin',
           body: JSON.stringify({
             token: token,
             password: passwordInput.value,

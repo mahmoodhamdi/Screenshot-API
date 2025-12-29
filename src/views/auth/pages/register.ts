@@ -9,13 +9,14 @@ import { generateFormButton } from '../components/form-button';
 export interface RegisterPageConfig {
   baseUrl?: string;
   error?: string;
+  csrfToken?: string;
 }
 
 /**
  * Generate register form HTML
  */
 export function generateRegisterForm(config: RegisterPageConfig = {}): string {
-  const { error = '' } = config;
+  const { error = '', csrfToken = '' } = config;
 
   const nameInput = generateFormInput({
     id: 'name',
@@ -148,6 +149,7 @@ export function generateRegisterForm(config: RegisterPageConfig = {}): string {
 
         <!-- Register Form -->
         <form id="register-form" novalidate>
+          <input type="hidden" name="_csrf" id="csrf-token" value="${csrfToken}">
           ${nameInput}
           ${emailInput}
           ${passwordInput}
@@ -703,11 +705,14 @@ export function getRegisterScripts(): string {
       setLoading(true);
 
       try {
+        const csrfToken = document.getElementById('csrf-token')?.value || '';
         const response = await fetch('/api/v1/auth/register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
           },
+          credentials: 'same-origin',
           body: JSON.stringify({
             name: nameInput.value.trim(),
             email: emailInput.value.trim(),

@@ -1,0 +1,413 @@
+# Screenshot API - Master Review & Production Readiness Plan
+
+## Executive Summary
+
+This document outlines a comprehensive review and production-readiness plan for the Screenshot API project. The plan is divided into 5 phases, each containing specific milestones with detailed prompts for Claude Code execution.
+
+**Current Status:** ~85% Complete
+**Target:** 100% Production Ready
+
+---
+
+## Quick Navigation
+
+| Phase | Focus | Status | Progress |
+|-------|-------|--------|----------|
+| [Phase 1](#phase-1-security--critical-fixes) | Security & Critical Fixes | IN_PROGRESS | 1/5 |
+| [Phase 2](#phase-2-complete-missing-implementations) | Complete Missing Implementations | NOT_STARTED | 0/4 |
+| [Phase 3](#phase-3-testing--quality) | Testing & Quality | NOT_STARTED | 0/5 |
+| [Phase 4](#phase-4-performance-optimization) | Performance Optimization | NOT_STARTED | 0/4 |
+| [Phase 5](#phase-5-polish--production-ready) | Polish & Production Ready | NOT_STARTED | 0/3 |
+
+**Total Milestones:** 21
+**Completed:** 1/21
+
+---
+
+## Current State Analysis
+
+### Dashboard Pages (7/7 Complete)
+- [x] Overview - Stats, recent activity, quick capture
+- [x] Screenshots - Table with filters, modals, pagination
+- [x] Screenshot Detail - Preview, zoom, metadata
+- [x] API Keys - Create, revoke, permissions management
+- [x] Usage Analytics - Charts (bar, donut, line)
+- [x] Settings - Profile, security, notifications
+- [x] Billing - Plans, payment methods, invoices
+
+### API Endpoints (44/44 Implemented)
+- [x] Auth Routes (12 endpoints)
+- [x] Screenshot Routes (8 endpoints)
+- [x] Subscription Routes (8 endpoints)
+- [x] Analytics Routes (6 endpoints)
+- [x] Root Routes (2 endpoints)
+
+### Services Implementation
+| Service | Status | Gaps |
+|---------|--------|------|
+| Auth | 95% | Password reset token not persisted |
+| Screenshot | 100% | None |
+| Subscription | 95% | Payment failure email notification |
+| Storage | 100% | None |
+| Analytics | 100% | None |
+
+### Critical Issues Found
+
+#### Security Issues (High Priority)
+1. **No CSRF Protection** - Missing csrf middleware
+2. **Race Condition in JWT Middleware** - Async flow issue
+3. **Weak Auth Rate Limiting** - Only 5 req/min, no lockout
+4. **Concurrent Limiter In-Memory** - Not distributed
+5. **Unsafe CSP Directives** - unsafe-inline/unsafe-eval
+6. **Redis Failure = No Limits** - Pass-through on Redis down
+
+#### Missing Implementations
+1. Password reset token persistence
+2. Email notifications (payment failures, etc.)
+3. HTTPS enforcement for webhooks
+4. Webhook signature verification
+
+#### Test Coverage Gaps
+1. Screenshot endpoint tests missing
+2. Subscription endpoint tests missing
+3. Analytics endpoint tests missing
+4. Email service tests missing
+5. Storage service tests missing
+6. Puppeteer integration tests missing
+
+---
+
+## Phase 1: Security & Critical Fixes
+
+**Priority:** CRITICAL
+**Estimated Milestones:** 5
+
+### Milestone 1.1: CSRF Protection ✅
+- **Prompt File:** `plans/phase1-security/M1.1-csrf-protection.md`
+- **Status:** COMPLETED
+- **Completed Date:** 2025-12-29
+- **Checklist:**
+  - [x] Created custom CSRF middleware (Double Submit Cookie pattern - csurf was deprecated)
+  - [x] Add CSRF middleware to app.ts
+  - [x] Update auth forms to include CSRF token
+  - [x] Add CSRF token to dashboard forms
+  - [x] Write tests for CSRF protection (29 unit tests)
+  - [x] All tests passing, TypeScript clean, lint clean
+
+### Milestone 1.2: Fix JWT Middleware Race Condition
+- **Prompt File:** `plans/phase1-security/M1.2-jwt-race-condition.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Audit auth.middleware.ts async flow
+  - [ ] Fix race condition in authenticateJWT
+  - [ ] Add proper error handling
+  - [ ] Write unit tests for edge cases
+  - [ ] Test concurrent requests
+
+### Milestone 1.3: Enhance Auth Security
+- **Prompt File:** `plans/phase1-security/M1.3-auth-security.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Implement account lockout after failed attempts
+  - [ ] Increase auth rate limits
+  - [ ] Add exponential backoff
+  - [ ] Move concurrent limiter to Redis
+  - [ ] Add IP-based brute force detection
+  - [ ] Write tests
+
+### Milestone 1.4: Fix CSP & Security Headers
+- **Prompt File:** `plans/phase1-security/M1.4-csp-headers.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Remove unsafe-inline/unsafe-eval from CSP
+  - [ ] Implement nonce-based CSP for scripts
+  - [ ] Separate CSP for API vs docs routes
+  - [ ] Add additional security headers
+  - [ ] Test all endpoints
+
+### Milestone 1.5: Redis Failure Handling
+- **Prompt File:** `plans/phase1-security/M1.5-redis-failsafe.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Implement circuit breaker for Redis
+  - [ ] Add fallback rate limiting (in-memory)
+  - [ ] Add health check for Redis
+  - [ ] Alert on Redis failures
+  - [ ] Write tests
+
+---
+
+## Phase 2: Complete Missing Implementations
+
+**Priority:** HIGH
+**Estimated Milestones:** 4
+
+### Milestone 2.1: Password Reset Flow
+- **Prompt File:** `plans/phase2-features/M2.1-password-reset.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Add resetToken and resetTokenExpiry to User model
+  - [ ] Implement token persistence in auth.service.ts
+  - [ ] Create reset password endpoint
+  - [ ] Add token validation with expiry
+  - [ ] Handle multiple reset requests
+  - [ ] Write tests
+
+### Milestone 2.2: Email Service
+- **Prompt File:** `plans/phase2-features/M2.2-email-service.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Create email.service.ts
+  - [ ] Implement email templates (password reset, verification, payment)
+  - [ ] Add Bull queue for email delivery
+  - [ ] Implement retry logic
+  - [ ] Add email for payment failures
+  - [ ] Write tests with nodemailer mock
+
+### Milestone 2.3: Webhook Security
+- **Prompt File:** `plans/phase2-features/M2.3-webhook-security.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Require HTTPS for webhook URLs in production
+  - [ ] Add HMAC-SHA256 signature to webhook payloads
+  - [ ] Add webhook attempt persistence
+  - [ ] Implement webhook DLQ (dead letter queue)
+  - [ ] Add webhook retry with exponential backoff + jitter
+  - [ ] Write tests
+
+### Milestone 2.4: Input Validation Hardening
+- **Prompt File:** `plans/phase2-features/M2.4-input-validation.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Add password entropy check (zxcvbn)
+  - [ ] Sanitize custom headers in screenshot requests
+  - [ ] Validate cookie values
+  - [ ] Add URL scheme validation (no file://, javascript:, etc.)
+  - [ ] Write tests
+
+---
+
+## Phase 3: Testing & Quality
+
+**Priority:** HIGH
+**Estimated Milestones:** 5
+
+### Milestone 3.1: Screenshot Endpoint Tests
+- **Prompt File:** `plans/phase3-testing/M3.1-screenshot-tests.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] POST /screenshots - create tests
+  - [ ] GET /screenshots - list tests
+  - [ ] GET /screenshots/:id - single tests
+  - [ ] DELETE /screenshots/:id - delete tests
+  - [ ] POST /screenshots/:id/refresh-url - refresh tests
+  - [ ] POST /screenshots/:id/retry - retry tests
+  - [ ] Plan limit tests
+  - [ ] Rate limit tests
+
+### Milestone 3.2: Subscription Endpoint Tests
+- **Prompt File:** `plans/phase3-testing/M3.2-subscription-tests.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] GET /subscriptions/plans - plans tests
+  - [ ] POST /subscriptions/checkout - checkout tests
+  - [ ] POST /subscriptions/portal - portal tests
+  - [ ] POST /subscriptions/webhook - webhook tests
+  - [ ] PUT /subscriptions/plan - change plan tests
+  - [ ] DELETE /subscriptions - cancel tests
+  - [ ] Stripe mock tests
+
+### Milestone 3.3: Analytics Endpoint Tests
+- **Prompt File:** `plans/phase3-testing/M3.3-analytics-tests.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] GET /analytics/overview - overview tests
+  - [ ] GET /analytics/screenshots - screenshot stats tests
+  - [ ] GET /analytics/usage - usage tests
+  - [ ] GET /analytics/errors - error breakdown tests
+  - [ ] GET /analytics/urls - popular URLs tests
+  - [ ] Date range filtering tests
+  - [ ] Plan-based access tests
+
+### Milestone 3.4: Service Integration Tests
+- **Prompt File:** `plans/phase3-testing/M3.4-service-tests.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Email service tests (with nodemailer mock)
+  - [ ] Storage service tests (S3 mock + local)
+  - [ ] Puppeteer/screenshot capture tests
+  - [ ] Redis caching tests
+  - [ ] Stripe webhook handler tests
+
+### Milestone 3.5: E2E Test Completion
+- **Prompt File:** `plans/phase3-testing/M3.5-e2e-tests.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Complete screenshot capture flow
+  - [ ] Complete subscription lifecycle
+  - [ ] Add payment flow tests
+  - [ ] Add webhook delivery tests
+  - [ ] Multi-user scenarios
+  - [ ] Error recovery scenarios
+
+---
+
+## Phase 4: Performance Optimization
+
+**Priority:** MEDIUM
+**Estimated Milestones:** 4
+
+### Milestone 4.1: Database Optimization
+- **Prompt File:** `plans/phase4-performance/M4.1-database-optimization.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Add missing indexes
+  - [ ] Optimize aggregation pipelines
+  - [ ] Add query explain analysis
+  - [ ] Implement cursor-based pagination
+  - [ ] Add connection pool monitoring
+
+### Milestone 4.2: Caching Strategy
+- **Prompt File:** `plans/phase4-performance/M4.2-caching-strategy.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Cache available plans
+  - [ ] Cache user permissions
+  - [ ] Add response caching for analytics
+  - [ ] Implement cache warming
+  - [ ] Add cache hit/miss metrics
+
+### Milestone 4.3: Puppeteer Optimization
+- **Prompt File:** `plans/phase4-performance/M4.3-puppeteer-optimization.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Optimize browser pool size
+  - [ ] Add page reuse for similar requests
+  - [ ] Implement request interception optimization
+  - [ ] Add timeout configuration per plan
+  - [ ] Monitor memory usage
+
+### Milestone 4.4: API Response Optimization
+- **Prompt File:** `plans/phase4-performance/M4.4-api-optimization.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Add field selection (sparse fieldsets)
+  - [ ] Implement response compression tuning
+  - [ ] Add ETags for cacheable responses
+  - [ ] Optimize JSON serialization
+  - [ ] Add response time tracking
+
+---
+
+## Phase 5: Polish & Production Ready
+
+**Priority:** MEDIUM
+**Estimated Milestones:** 3
+
+### Milestone 5.1: Error Handling & Logging
+- **Prompt File:** `plans/phase5-polish/M5.1-error-logging.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Add structured logging fields
+  - [ ] Implement request correlation IDs
+  - [ ] Add audit logging for sensitive operations
+  - [ ] Create error tracking integration
+  - [ ] Add log rotation configuration
+
+### Milestone 5.2: Documentation & API Contracts
+- **Prompt File:** `plans/phase5-polish/M5.2-documentation.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Update OpenAPI spec with all changes
+  - [ ] Add request/response examples
+  - [ ] Document rate limits per plan
+  - [ ] Update developer portal
+  - [ ] Create deployment guide
+
+### Milestone 5.3: Production Checklist
+- **Prompt File:** `plans/phase5-polish/M5.3-production-checklist.md`
+- **Status:** NOT_STARTED
+- **Checklist:**
+  - [ ] Environment variable validation
+  - [ ] Health check improvements
+  - [ ] Graceful shutdown handling
+  - [ ] Docker optimization
+  - [ ] CI/CD pipeline review
+  - [ ] Security audit final pass
+
+---
+
+## How to Use This Plan
+
+### Starting a New Session
+
+1. Check this file for current progress
+2. Find the next NOT_STARTED milestone
+3. Open the corresponding prompt file
+4. Give Claude Code the prompt file path
+
+### Prompt File Format
+
+Each prompt file contains:
+- **Context:** What this milestone is about
+- **Current State:** What exists now
+- **Requirements:** What needs to be done
+- **Files to Modify:** Specific files to change
+- **Acceptance Criteria:** How to know it's done
+- **Tests Required:** What tests to write
+
+### After Completing a Milestone
+
+1. Update this file - change status to COMPLETED
+2. Update checklist items to [x]
+3. Update phase progress counter
+4. Commit changes with milestone reference
+
+---
+
+## Progress Tracking
+
+### Last Updated: [DATE]
+### Current Phase: NOT_STARTED
+### Current Milestone: None
+### Blockers: None
+
+### Session Log
+| Date | Session | Milestone | Status | Notes |
+|------|---------|-----------|--------|-------|
+| | | | | |
+
+---
+
+## Files Structure
+
+```
+plans/
+├── MASTER_PLAN.md (this file)
+├── phase1-security/
+│   ├── M1.1-csrf-protection.md
+│   ├── M1.2-jwt-race-condition.md
+│   ├── M1.3-auth-security.md
+│   ├── M1.4-csp-headers.md
+│   └── M1.5-redis-failsafe.md
+├── phase2-features/
+│   ├── M2.1-password-reset.md
+│   ├── M2.2-email-service.md
+│   ├── M2.3-webhook-security.md
+│   └── M2.4-input-validation.md
+├── phase3-testing/
+│   ├── M3.1-screenshot-tests.md
+│   ├── M3.2-subscription-tests.md
+│   ├── M3.3-analytics-tests.md
+│   ├── M3.4-service-tests.md
+│   └── M3.5-e2e-tests.md
+├── phase4-performance/
+│   ├── M4.1-database-optimization.md
+│   ├── M4.2-caching-strategy.md
+│   ├── M4.3-puppeteer-optimization.md
+│   └── M4.4-api-optimization.md
+└── phase5-polish/
+    ├── M5.1-error-logging.md
+    ├── M5.2-documentation.md
+    └── M5.3-production-checklist.md
+```

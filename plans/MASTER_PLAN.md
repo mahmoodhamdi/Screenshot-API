@@ -119,13 +119,14 @@ This document outlines a comprehensive review and production-readiness plan for 
 
 ### Milestone 1.4: Fix CSP & Security Headers
 - **Prompt File:** `plans/phase1-security/M1.4-csp-headers.md`
-- **Status:** NOT_STARTED
+- **Status:** COMPLETED (2025-12-29)
+- **Commit:** `6652608`
 - **Checklist:**
-  - [ ] Remove unsafe-inline/unsafe-eval from CSP
-  - [ ] Implement nonce-based CSP for scripts
-  - [ ] Separate CSP for API vs docs routes
-  - [ ] Add additional security headers
-  - [ ] Test all endpoints
+  - [x] Remove unsafe-inline/unsafe-eval from CSP (for app routes)
+  - [x] Implement nonce-based CSP for scripts
+  - [x] Separate CSP for API vs docs routes
+  - [x] Add additional security headers
+  - [x] Test all endpoints (53 unit + 51 integration tests)
 
 ### Milestone 1.5: Redis Failure Handling
 - **Prompt File:** `plans/phase1-security/M1.5-redis-failsafe.md`

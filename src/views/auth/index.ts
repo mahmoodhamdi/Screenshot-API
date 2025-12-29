@@ -38,6 +38,7 @@ export interface AuthPageConfig {
   baseUrl?: string;
   token?: string;
   email?: string;
+  csrfToken?: string;
 }
 
 interface PageMeta {
@@ -214,18 +215,23 @@ export function generateAuthPage(page: AuthPageType, config: AuthPageConfig = {}
 function getPageContent(page: AuthPageType, config: AuthPageConfig): string {
   switch (page) {
     case 'login':
-      return generateLoginForm({ baseUrl: config.baseUrl });
+      return generateLoginForm({ baseUrl: config.baseUrl, csrfToken: config.csrfToken });
     case 'register':
-      return generateRegisterForm({ baseUrl: config.baseUrl });
+      return generateRegisterForm({ baseUrl: config.baseUrl, csrfToken: config.csrfToken });
     case 'forgot-password':
-      return generateForgotPasswordForm({ baseUrl: config.baseUrl });
+      return generateForgotPasswordForm({ baseUrl: config.baseUrl, csrfToken: config.csrfToken });
     case 'reset-password':
-      return generateResetPasswordForm({ baseUrl: config.baseUrl, token: config.token });
+      return generateResetPasswordForm({
+        baseUrl: config.baseUrl,
+        token: config.token,
+        csrfToken: config.csrfToken,
+      });
     case 'verify-email':
       return generateVerifyEmailForm({
         baseUrl: config.baseUrl,
         token: config.token,
         email: config.email,
+        csrfToken: config.csrfToken,
       });
     default:
       return getPagePlaceholder(page, PAGE_META[page]);

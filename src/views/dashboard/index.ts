@@ -50,6 +50,7 @@ export interface DashboardPageConfig {
   baseUrl?: string;
   user: DashboardUser;
   data?: Record<string, unknown>;
+  csrfToken?: string;
 }
 
 interface PageMeta {
@@ -104,7 +105,13 @@ export function generateDashboardPage(
   config: DashboardPageConfig
 ): string {
   const pageMeta = PAGE_META[page];
-  const { title = pageMeta.title, description = pageMeta.description, baseUrl = '', user } = config;
+  const {
+    title = pageMeta.title,
+    description = pageMeta.description,
+    baseUrl = '',
+    user,
+    csrfToken = '',
+  } = config;
 
   const styles = `
     ${getBaseStyles()}
@@ -137,6 +144,9 @@ export function generateDashboardPage(
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta name="theme-color" content="#0a0a0f">
+
+  <!-- CSRF Token -->
+  <meta name="csrf-token" content="${csrfToken}">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -739,6 +749,26 @@ function getBaseStyles(): string {
  */
 function getDashboardScripts(): string {
   return `
+    // Get CSRF token from meta tag
+    function getCsrfToken() {
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      return meta ? meta.getAttribute('content') : '';
+    }
+
+    // Fetch with CSRF token
+    async function fetchWithCsrf(url, options = {}) {
+      const csrfToken = getCsrfToken();
+      const headers = {
+        ...options.headers,
+        'X-CSRF-Token': csrfToken,
+      };
+      return fetch(url, {
+        ...options,
+        headers,
+        credentials: 'same-origin',
+      });
+    }
+
     // Screen reader announcement
     function announce(message, priority = 'polite') {
       const announcer = document.getElementById('sr-announcer');

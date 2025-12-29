@@ -9,13 +9,14 @@ import { generateFormButton } from '../components/form-button';
 export interface ForgotPasswordPageConfig {
   baseUrl?: string;
   error?: string;
+  csrfToken?: string;
 }
 
 /**
  * Generate forgot password form HTML
  */
 export function generateForgotPasswordForm(config: ForgotPasswordPageConfig = {}): string {
-  const { error = '' } = config;
+  const { error = '', csrfToken = '' } = config;
 
   const emailInput = generateFormInput({
     id: 'email',
@@ -68,6 +69,7 @@ export function generateForgotPasswordForm(config: ForgotPasswordPageConfig = {}
 
           <!-- Forgot Password Form -->
           <form id="forgot-form" novalidate>
+            <input type="hidden" name="_csrf" id="csrf-token" value="${csrfToken}">
             ${emailInput}
 
             <div class="btn-group">
@@ -401,11 +403,14 @@ export function getForgotPasswordScripts(): string {
       submittedEmail = emailInput.value.trim();
 
       try {
+        const csrfToken = document.getElementById('csrf-token')?.value || '';
         const response = await fetch('/api/v1/auth/forgot-password', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
           },
+          credentials: 'same-origin',
           body: JSON.stringify({
             email: submittedEmail,
           }),
@@ -436,11 +441,14 @@ export function getForgotPasswordScripts(): string {
       resendBtn.disabled = true;
 
       try {
+        const csrfToken = document.getElementById('csrf-token')?.value || '';
         const response = await fetch('/api/v1/auth/forgot-password', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
           },
+          credentials: 'same-origin',
           body: JSON.stringify({
             email: submittedEmail,
           }),

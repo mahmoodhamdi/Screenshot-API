@@ -10,13 +10,14 @@ export interface VerifyEmailPageConfig {
   baseUrl?: string;
   token?: string;
   email?: string;
+  csrfToken?: string;
 }
 
 /**
  * Generate verify email page HTML
  */
 export function generateVerifyEmailForm(config: VerifyEmailPageConfig = {}): string {
-  const { token = '', email = '' } = config;
+  const { token = '', email = '', csrfToken = '' } = config;
 
   const emailInput = generateFormInput({
     id: 'resend-email',
@@ -159,6 +160,7 @@ export function generateVerifyEmailForm(config: VerifyEmailPageConfig = {}): str
 
           <!-- Resend Form -->
           <form id="resend-form" novalidate>
+            <input type="hidden" name="_csrf" id="csrf-token" value="${csrfToken}">
             ${emailInput}
 
             <div class="btn-group">
@@ -454,9 +456,14 @@ export function getVerifyEmailScripts(): string {
       showState('loading');
 
       try {
+        const csrfToken = document.getElementById('csrf-token')?.value || '';
         const response = await fetch('/api/v1/auth/verify-email', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          credentials: 'same-origin',
           body: JSON.stringify({ token }),
         });
 
@@ -499,9 +506,14 @@ export function getVerifyEmailScripts(): string {
       setResendLoading(true);
 
       try {
+        const csrfToken = document.getElementById('csrf-token')?.value || '';
         const response = await fetch('/api/v1/auth/resend-verification', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          credentials: 'same-origin',
           body: JSON.stringify({ email }),
         });
 
@@ -530,9 +542,14 @@ export function getVerifyEmailScripts(): string {
       pendingResendBtn.disabled = true;
 
       try {
+        const csrfToken = document.getElementById('csrf-token')?.value || '';
         await fetch('/api/v1/auth/resend-verification', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          credentials: 'same-origin',
           body: JSON.stringify({ email }),
         });
 

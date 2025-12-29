@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { v4 as uuidv4 } from 'uuid';
 import swaggerUi from 'swagger-ui-express';
 import redoc from 'redoc-express';
@@ -17,6 +18,7 @@ import config from '@config/index';
 import swaggerSpec from '@config/swagger';
 import routes from '@routes/index';
 import { errorHandler, notFoundHandler } from '@middlewares/error.middleware';
+import { csrfToken, conditionalCsrf, csrfErrorHandler } from '@middlewares/csrf.middleware';
 import logger from '@utils/logger';
 import {
   generatePostmanCollection,
@@ -109,6 +111,12 @@ app.use(compression());
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Cookie parsing (required for CSRF)
+app.use(cookieParser());
+
+// CSRF token generation (adds csrfToken to all requests)
+app.use(csrfToken);
 
 // Trust proxy for accurate IP detection behind load balancers
 app.set('trust proxy', config.server.trustProxy);
@@ -1386,6 +1394,9 @@ app.get('/', (_req: Request, res: Response) => {
 // Authentication Pages
 // ============================================
 
+// Apply CSRF protection for browser form routes
+app.use(conditionalCsrf);
+
 // Auth page routes
 const authPages: AuthPageType[] = [
   'login',
@@ -1406,10 +1417,14 @@ authPages.forEach((page) => {
     const token = req.query.token as string | undefined;
     const email = req.query.email as string | undefined;
 
+    // Get CSRF token from res.locals (set by csrfToken middleware)
+    const csrfToken = res.locals.csrfToken as string | undefined;
+
     const authPage = generateAuthPage(page, {
       baseUrl,
       token,
       email,
+      csrfToken,
     });
     res.setHeader('Content-Type', 'text/html');
     res.send(authPage);
@@ -1445,7 +1460,10 @@ dashboardRoutes.forEach(({ path, page }) => {
     // TODO: Add authentication check - redirect to /login if not authenticated
     const user = getMockUser();
 
-    const dashboardPage = generateDashboardPage(page, { user });
+    // Get CSRF token from res.locals (set by csrfToken middleware)
+    const csrfToken = res.locals.csrfToken as string | undefined;
+
+    const dashboardPage = generateDashboardPage(page, { user, csrfToken });
     res.setHeader('Content-Type', 'text/html');
     res.send(dashboardPage);
   });
@@ -1456,7 +1474,10 @@ app.get('/dashboard/screenshots/:id', (_req: Request, res: Response) => {
   // TODO: Add authentication check - redirect to /login if not authenticated
   const user = getMockUser();
 
-  const dashboardPage = generateDashboardPage('screenshot-detail', { user });
+  // Get CSRF token from res.locals (set by csrfToken middleware)
+  const csrfToken = res.locals.csrfToken as string | undefined;
+
+  const dashboardPage = generateDashboardPage('screenshot-detail', { user, csrfToken });
   res.setHeader('Content-Type', 'text/html');
   res.send(dashboardPage);
 });
@@ -1467,6 +1488,9 @@ app.get('/dashboard/screenshots/:id', (_req: Request, res: Response) => {
 
 // 404 handler for unmatched routes
 app.use(notFoundHandler);
+
+// CSRF error handler (must be before global error handler)
+app.use(csrfErrorHandler);
 
 // Global error handler
 app.use(errorHandler);

@@ -10,13 +10,14 @@ export interface LoginPageConfig {
   baseUrl?: string;
   error?: string;
   email?: string;
+  csrfToken?: string;
 }
 
 /**
  * Generate login form HTML
  */
 export function generateLoginForm(config: LoginPageConfig = {}): string {
-  const { error = '', email = '' } = config;
+  const { error = '', email = '', csrfToken = '' } = config;
 
   const emailInput = generateFormInput({
     id: 'email',
@@ -71,6 +72,7 @@ export function generateLoginForm(config: LoginPageConfig = {}): string {
 
         <!-- Login Form -->
         <form id="login-form" novalidate>
+          <input type="hidden" name="_csrf" id="csrf-token" value="${csrfToken}">
           ${emailInput}
           ${passwordInput}
 
@@ -420,11 +422,14 @@ export function getLoginScripts(): string {
       setLoading(true);
 
       try {
+        const csrfToken = document.getElementById('csrf-token')?.value || '';
         const response = await fetch('/api/v1/auth/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
           },
+          credentials: 'same-origin',
           body: JSON.stringify({
             email: emailInput.value.trim(),
             password: passwordInput.value,

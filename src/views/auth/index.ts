@@ -39,6 +39,7 @@ export interface AuthPageConfig {
   token?: string;
   email?: string;
   csrfToken?: string;
+  nonce?: string;
 }
 
 interface PageMeta {
@@ -87,7 +88,12 @@ const PAGE_META: Record<AuthPageType, PageMeta> = {
  */
 export function generateAuthPage(page: AuthPageType, config: AuthPageConfig = {}): string {
   const pageMeta = PAGE_META[page];
-  const { title = pageMeta.title, description = pageMeta.description, baseUrl = '' } = config;
+  const {
+    title = pageMeta.title,
+    description = pageMeta.description,
+    baseUrl = '',
+    nonce = '',
+  } = config;
 
   const styles = `
     ${getBaseStyles()}
@@ -129,7 +135,7 @@ export function generateAuthPage(page: AuthPageType, config: AuthPageConfig = {}
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <style>${styles}</style>
+  <style${nonce ? ` nonce="${nonce}"` : ''}>${styles}</style>
 </head>
 <body class="page-loading">
   <!-- Skip link for keyboard navigation -->
@@ -204,7 +210,7 @@ export function generateAuthPage(page: AuthPageType, config: AuthPageConfig = {}
     </div>
   </div>
 
-  <script>${getAuthScripts()}${getPageScripts(page)}</script>
+  <script${nonce ? ` nonce="${nonce}"` : ''}>${getAuthScripts()}${getPageScripts(page)}</script>
 </body>
 </html>`;
 }

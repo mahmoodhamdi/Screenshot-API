@@ -4,7 +4,6 @@
  */
 
 import express, { Application, Request, Response, NextFunction } from 'express';
-import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
@@ -19,6 +18,7 @@ import swaggerSpec from '@config/swagger';
 import routes from '@routes/index';
 import { errorHandler, notFoundHandler } from '@middlewares/error.middleware';
 import { csrfToken, conditionalCsrf, csrfErrorHandler } from '@middlewares/csrf.middleware';
+import { nonceMiddleware, routeAwareSecurityMiddleware } from '@middlewares/nonce.middleware';
 import logger from '@utils/logger';
 import {
   generatePostmanCollection,
@@ -36,45 +36,21 @@ import { generateDashboardPage, DashboardPageType } from './views/dashboard';
 
 const app: Application = express();
 
+// Disable X-Powered-By header globally
+app.disable('x-powered-by');
+
 // ============================================
 // Security Middleware
 // ============================================
 
-// Helmet for security headers
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          'https://cdnjs.cloudflare.com',
-          'https://fonts.googleapis.com',
-          'https://unpkg.com',
-        ],
-        scriptSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          "'unsafe-eval'",
-          'https://cdnjs.cloudflare.com',
-          'https://unpkg.com',
-        ],
-        scriptSrcAttr: ["'unsafe-inline'"],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com', 'data:'],
-        imgSrc: [
-          "'self'",
-          'data:',
-          'blob:',
-          'https://validator.swagger.io',
-          'https://cdnjs.cloudflare.com',
-        ],
-        connectSrc: ["'self'", 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'],
-      },
-    },
-    crossOriginEmbedderPolicy: false,
-  })
-);
+// Generate nonce for each request (must be before CSP middleware)
+app.use(nonceMiddleware);
+
+// Route-aware security middleware
+// - Strict CSP with nonce for app routes (landing, auth, dashboard)
+// - Relaxed CSP for docs routes (Swagger, ReDoc, Developer Portal)
+// - Minimal headers for API routes
+app.use(routeAwareSecurityMiddleware);
 
 // CORS configuration
 app.use(
@@ -1385,6 +1361,7 @@ app.get('/', (_req: Request, res: Response) => {
       config.server.env === 'production'
         ? 'https://api.screenshot.dev'
         : `http://localhost:${config.server.port}`,
+    nonce: res.locals.nonce,
   });
   res.setHeader('Content-Type', 'text/html');
   res.send(landingPage);
@@ -1420,11 +1397,15 @@ authPages.forEach((page) => {
     // Get CSRF token from res.locals (set by csrfToken middleware)
     const csrfToken = res.locals.csrfToken as string | undefined;
 
+    // Get nonce from res.locals (set by nonceMiddleware)
+    const nonce = res.locals.nonce as string | undefined;
+
     const authPage = generateAuthPage(page, {
       baseUrl,
       token,
       email,
       csrfToken,
+      nonce,
     });
     res.setHeader('Content-Type', 'text/html');
     res.send(authPage);
@@ -1463,7 +1444,10 @@ dashboardRoutes.forEach(({ path, page }) => {
     // Get CSRF token from res.locals (set by csrfToken middleware)
     const csrfToken = res.locals.csrfToken as string | undefined;
 
-    const dashboardPage = generateDashboardPage(page, { user, csrfToken });
+    // Get nonce from res.locals (set by nonceMiddleware)
+    const nonce = res.locals.nonce as string | undefined;
+
+    const dashboardPage = generateDashboardPage(page, { user, csrfToken, nonce });
     res.setHeader('Content-Type', 'text/html');
     res.send(dashboardPage);
   });
@@ -1477,7 +1461,10 @@ app.get('/dashboard/screenshots/:id', (_req: Request, res: Response) => {
   // Get CSRF token from res.locals (set by csrfToken middleware)
   const csrfToken = res.locals.csrfToken as string | undefined;
 
-  const dashboardPage = generateDashboardPage('screenshot-detail', { user, csrfToken });
+  // Get nonce from res.locals (set by nonceMiddleware)
+  const nonce = res.locals.nonce as string | undefined;
+
+  const dashboardPage = generateDashboardPage('screenshot-detail', { user, csrfToken, nonce });
   res.setHeader('Content-Type', 'text/html');
   res.send(dashboardPage);
 });

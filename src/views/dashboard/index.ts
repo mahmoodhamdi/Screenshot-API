@@ -51,6 +51,7 @@ export interface DashboardPageConfig {
   user: DashboardUser;
   data?: Record<string, unknown>;
   csrfToken?: string;
+  nonce?: string;
 }
 
 interface PageMeta {
@@ -111,6 +112,7 @@ export function generateDashboardPage(
     baseUrl = '',
     user,
     csrfToken = '',
+    nonce = '',
   } = config;
 
   const styles = `
@@ -153,7 +155,7 @@ export function generateDashboardPage(
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <style>${styles}</style>
+  <style${nonce ? ` nonce="${nonce}"` : ''}>${styles}</style>
 </head>
 <body class="dashboard-body">
   <!-- Skip link for keyboard navigation -->
@@ -167,7 +169,7 @@ export function generateDashboardPage(
 
   ${content}
 
-  <script>${getDashboardScripts()}${getPageScripts(page)}</script>
+  <script${nonce ? ` nonce="${nonce}"` : ''}>${getDashboardScripts()}${getPageScripts(page)}</script>
 </body>
 </html>`;
 }

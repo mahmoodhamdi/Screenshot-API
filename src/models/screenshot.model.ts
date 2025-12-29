@@ -241,6 +241,15 @@ screenshotSchema.index({ 'result.status': 1 });
 screenshotSchema.index({ createdAt: 1 });
 screenshotSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL index for auto-deletion
 
+// Compound index for filtered user queries (status + date filtering)
+screenshotSchema.index({ user: 1, 'result.status': 1, createdAt: -1 });
+
+// Index for URL-based queries (popular URLs analytics)
+screenshotSchema.index({ url: 1 });
+
+// Compound index for API key analytics
+screenshotSchema.index({ apiKey: 1, createdAt: -1 });
+
 // ============================================
 // Virtual Fields
 // ============================================

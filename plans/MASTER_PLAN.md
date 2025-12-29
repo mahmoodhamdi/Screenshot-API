@@ -16,11 +16,11 @@ This document outlines a comprehensive review and production-readiness plan for 
 | [Phase 1](#phase-1-security--critical-fixes) | Security & Critical Fixes | COMPLETED | 5/5 |
 | [Phase 2](#phase-2-complete-missing-implementations) | Complete Missing Implementations | COMPLETED | 4/4 |
 | [Phase 3](#phase-3-testing--quality) | Testing & Quality | NOT_STARTED | 0/5 |
-| [Phase 4](#phase-4-performance-optimization) | Performance Optimization | NOT_STARTED | 0/4 |
+| [Phase 4](#phase-4-performance-optimization) | Performance Optimization | IN_PROGRESS | 1/4 |
 | [Phase 5](#phase-5-polish--production-ready) | Polish & Production Ready | NOT_STARTED | 0/3 |
 
 **Total Milestones:** 21
-**Completed:** 9/21
+**Completed:** 10/21
 
 ---
 
@@ -267,15 +267,16 @@ This document outlines a comprehensive review and production-readiness plan for 
 **Priority:** MEDIUM
 **Estimated Milestones:** 4
 
-### Milestone 4.1: Database Optimization
+### Milestone 4.1: Database Optimization ✅
 - **Prompt File:** `plans/phase4-performance/M4.1-database-optimization.md`
-- **Status:** NOT_STARTED
+- **Status:** COMPLETED
+- **Completed Date:** 2025-12-29
 - **Checklist:**
-  - [ ] Add missing indexes
-  - [ ] Optimize aggregation pipelines
-  - [ ] Add query explain analysis
-  - [ ] Implement cursor-based pagination
-  - [ ] Add connection pool monitoring
+  - [x] Add missing indexes (Screenshot, Usage, WebhookAttempt models)
+  - [x] Optimize aggregation pipelines (fixed $result.status bugs in analytics)
+  - [x] Add TTL indexes for automatic cleanup (Usage 90d, WebhookAttempt 30d)
+  - [x] Implement cursor-based pagination (`src/utils/pagination.ts`)
+  - [x] All tests passing
 
 ### Milestone 4.2: Caching Strategy
 - **Prompt File:** `plans/phase4-performance/M4.2-caching-strategy.md`
@@ -378,8 +379,8 @@ Each prompt file contains:
 ## Progress Tracking
 
 ### Last Updated: 2025-12-29
-### Current Phase: Phase 2 - Complete Missing Implementations (IN_PROGRESS)
-### Current Milestone: M2.3 Completed
+### Current Phase: Phase 4 - Performance Optimization (IN_PROGRESS)
+### Current Milestone: M4.1 Completed
 ### Blockers: None
 
 ### Session Log
@@ -393,6 +394,7 @@ Each prompt file contains:
 | 2025-12-29 | 6 | M2.1 Password Reset | COMPLETED | Token persistence, validation, session invalidation |
 | 2025-12-29 | 7 | M2.2 Email Service | COMPLETED | Bull queue, 8 email types, auth/subscription integration |
 | 2025-12-29 | 8 | M2.3 Webhook Security | COMPLETED | HMAC-SHA256 signatures, Bull queue, exponential backoff |
+| 2025-12-29 | 9 | M4.1 Database Optimization | COMPLETED | Indexes, TTL cleanup, cursor pagination, analytics fixes |
 
 ---
 

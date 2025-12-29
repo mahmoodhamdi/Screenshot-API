@@ -131,10 +131,10 @@ export async function getOverview(user: IUser): Promise<OverviewStats> {
           _id: null,
           total: { $sum: 1 },
           successful: {
-            $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ['$result.status', 'completed'] }, 1, 0] },
           },
           failed: {
-            $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ['$result.status', 'failed'] }, 1, 0] },
           },
           totalDuration: {
             $sum: { $ifNull: ['$result.duration', 0] },
@@ -216,7 +216,7 @@ export async function getScreenshotStats(
       { $match: matchStage },
       {
         $group: {
-          _id: '$status',
+          _id: '$result.status',
           count: { $sum: 1 },
         },
       },
@@ -251,7 +251,7 @@ export async function getScreenshotStats(
 
     // General stats
     Screenshot.aggregate([
-      { $match: { ...matchStage, status: 'completed' } },
+      { $match: { ...matchStage, 'result.status': 'completed' } },
       {
         $group: {
           _id: null,
@@ -382,10 +382,10 @@ export async function getUsageOverTime(
           },
           screenshots: { $sum: 1 },
           successful: {
-            $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ['$result.status', 'completed'] }, 1, 0] },
           },
           failed: {
-            $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ['$result.status', 'failed'] }, 1, 0] },
           },
           bandwidth: { $sum: { $ifNull: ['$result.size', 0] } },
           avgResponseTime: { $avg: { $ifNull: ['$result.duration', 0] } },
@@ -636,10 +636,10 @@ export async function getApiKeyStats(
           _id: null,
           total: { $sum: 1 },
           successful: {
-            $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ['$result.status', 'completed'] }, 1, 0] },
           },
           failed: {
-            $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ['$result.status', 'failed'] }, 1, 0] },
           },
         },
       },

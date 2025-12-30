@@ -19,6 +19,10 @@ import routes from '@routes/index';
 import { errorHandler, notFoundHandler } from '@middlewares/error.middleware';
 import { csrfToken, conditionalCsrf, csrfErrorHandler } from '@middlewares/csrf.middleware';
 import { nonceMiddleware, routeAwareSecurityMiddleware } from '@middlewares/nonce.middleware';
+import {
+  etagMiddleware,
+  responseTimeMiddleware,
+} from '@middlewares/apiOptimization.middleware';
 import logger from '@utils/logger';
 import {
   generatePostmanCollection,
@@ -61,9 +65,11 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Request-ID'],
     exposedHeaders: [
       'X-Request-ID',
+      'X-Response-Time',
       'X-RateLimit-Limit',
       'X-RateLimit-Remaining',
       'X-RateLimit-Reset',
+      'ETag',
     ],
     maxAge: 86400, // 24 hours
   })
@@ -73,6 +79,9 @@ app.use(
 // Request Processing Middleware
 // ============================================
 
+// Response time tracking (must be early to capture full request duration)
+app.use(responseTimeMiddleware);
+
 // Request ID for tracing
 app.use((req: Request, res: Response, next: NextFunction) => {
   const requestId = (req.headers['x-request-id'] as string) || uuidv4();
@@ -81,8 +90,38 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Compression
-app.use(compression());
+// Tuned compression - balance between speed and compression ratio
+app.use(
+  compression({
+    level: 6, // Balance between speed and compression (1-9)
+    threshold: 1024, // Only compress responses > 1KB
+    filter: (req: Request, res: Response) => {
+      // Don't compress if client doesn't accept it
+      if (req.headers['x-no-compression']) {
+        return false;
+      }
+
+      // Don't compress already-compressed formats (images, PDFs)
+      const contentType = res.getHeader('Content-Type');
+      if (typeof contentType === 'string') {
+        if (
+          contentType.includes('image/') ||
+          contentType.includes('application/pdf') ||
+          contentType.includes('video/') ||
+          contentType.includes('audio/')
+        ) {
+          return false;
+        }
+      }
+
+      // Use default filter for everything else
+      return compression.filter(req, res);
+    },
+  })
+);
+
+// ETag middleware for conditional GET requests (304 Not Modified)
+app.use(etagMiddleware);
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));

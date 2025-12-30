@@ -190,6 +190,7 @@ export const listScreenshotsSchema = z.object({
   format: z.enum(['png', 'jpeg', 'webp', 'pdf']).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
+  fields: z.string().max(500).optional(), // Sparse fieldsets - comma-separated field names
 });
 
 /**

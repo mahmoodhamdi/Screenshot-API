@@ -78,3 +78,12 @@ export {
   isDocsRoute,
   isApiRoute,
 } from './nonce.middleware';
+
+export {
+  etagMiddleware,
+  responseTimeMiddleware,
+  parseFieldSelection,
+  applyFieldSelection,
+  fieldSelectionMiddleware,
+  ALLOWED_FIELDS,
+} from './apiOptimization.middleware';

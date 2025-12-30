@@ -1,10 +1,13 @@
 /**
  * Winston Logger Configuration
  * Centralized logging with multiple transports and formats
+ * Enhanced with structured logging, context loggers, and audit capabilities
  */
 
 import winston from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
 import path from 'path';
+import config from '@config/index';
 
 /**
  * Log levels hierarchy
@@ -74,34 +77,107 @@ const consoleTransport = new winston.transports.Console({
   format: consoleFormat,
 });
 
+// ============================================
+// Context Logger Interface
+// ============================================
+
 /**
- * Create file transports (only in non-test environments)
+ * Context logger interface for request-scoped logging
  */
-const createFileTransports = (): winston.transport[] => {
+export interface ContextLogger {
+  info: (message: string, meta?: Record<string, unknown>) => void;
+  warn: (message: string, meta?: Record<string, unknown>) => void;
+  error: (message: string, meta?: Record<string, unknown>) => void;
+  debug: (message: string, meta?: Record<string, unknown>) => void;
+  http: (message: string, meta?: Record<string, unknown>) => void;
+}
+
+/**
+ * Create a context logger with pre-filled metadata
+ * Useful for request-scoped logging with correlation IDs
+ * @param context - Context metadata to include in all logs
+ * @returns Context logger instance
+ */
+export const createContextLogger = (context: Record<string, unknown>): ContextLogger => {
+  return {
+    info: (message: string, meta?: Record<string, unknown>) =>
+      logger.info(message, { ...context, ...meta }),
+    warn: (message: string, meta?: Record<string, unknown>) =>
+      logger.warn(message, { ...context, ...meta }),
+    error: (message: string, meta?: Record<string, unknown>) =>
+      logger.error(message, { ...context, ...meta }),
+    debug: (message: string, meta?: Record<string, unknown>) =>
+      logger.debug(message, { ...context, ...meta }),
+    http: (message: string, meta?: Record<string, unknown>) =>
+      logger.http(message, { ...context, ...meta }),
+  };
+};
+
+/**
+ * Default metadata for all log entries
+ */
+const defaultMeta = {
+  service: 'screenshot-api',
+  version: config.api.version || '1.0.0',
+  environment: getEnv(),
+};
+
+/**
+ * Create daily rotate file transport for production
+ */
+const createDailyRotateTransport = (): DailyRotateFile | null => {
   const env = getEnv();
-  if (env === 'test') return [];
+  if (env === 'test') return null;
 
   const logsDir = path.resolve(process.cwd(), 'logs');
 
-  return [
-    // All logs
-    new winston.transports.File({
-      filename: path.join(logsDir, 'combined.log'),
-      format: fileFormat,
-      maxsize: 10 * 1024 * 1024, // 10MB
-      maxFiles: 5,
-      tailable: true,
-    }),
-    // Error logs only
-    new winston.transports.File({
-      filename: path.join(logsDir, 'error.log'),
-      level: 'error',
-      format: fileFormat,
-      maxsize: 10 * 1024 * 1024, // 10MB
-      maxFiles: 5,
-      tailable: true,
-    }),
-  ];
+  return new DailyRotateFile({
+    filename: path.join(logsDir, 'app-%DATE%.log'),
+    datePattern: 'YYYY-MM-DD',
+    maxSize: '20m',
+    maxFiles: '14d',
+    zippedArchive: env === 'production',
+    format: fileFormat,
+  });
+};
+
+/**
+ * Create daily rotate file transport for errors only
+ */
+const createDailyRotateErrorTransport = (): DailyRotateFile | null => {
+  const env = getEnv();
+  if (env === 'test') return null;
+
+  const logsDir = path.resolve(process.cwd(), 'logs');
+
+  return new DailyRotateFile({
+    filename: path.join(logsDir, 'error-%DATE%.log'),
+    datePattern: 'YYYY-MM-DD',
+    maxSize: '20m',
+    maxFiles: '30d', // Keep error logs longer
+    zippedArchive: env === 'production',
+    level: 'error',
+    format: fileFormat,
+  });
+};
+
+/**
+ * Build transports array
+ */
+const buildTransports = (): winston.transport[] => {
+  const transports: winston.transport[] = [consoleTransport];
+
+  const dailyRotate = createDailyRotateTransport();
+  if (dailyRotate) {
+    transports.push(dailyRotate);
+  }
+
+  const dailyRotateError = createDailyRotateErrorTransport();
+  if (dailyRotateError) {
+    transports.push(dailyRotateError);
+  }
+
+  return transports;
 };
 
 /**
@@ -110,7 +186,8 @@ const createFileTransports = (): winston.transport[] => {
 export const logger = winston.createLogger({
   level: getLogLevel(),
   levels,
-  transports: [consoleTransport, ...createFileTransports()],
+  defaultMeta,
+  transports: buildTransports(),
   exitOnError: false,
   silent: getEnv() === 'test' && !process.env.LOG_IN_TESTS,
 });

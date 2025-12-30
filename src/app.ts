@@ -3,12 +3,11 @@
  * Main application configuration with all middleware and routes
  */
 
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import { v4 as uuidv4 } from 'uuid';
 import swaggerUi from 'swagger-ui-express';
 import redoc from 'redoc-express';
 import YAML from 'yaml';
@@ -23,7 +22,12 @@ import {
   etagMiddleware,
   responseTimeMiddleware,
 } from '@middlewares/apiOptimization.middleware';
+import {
+  requestContextMiddleware,
+  requestLoggingMiddleware,
+} from '@middlewares/requestContext.middleware';
 import logger from '@utils/logger';
+import { initializeErrorTracking } from '@utils/errorTracking';
 import {
   generatePostmanCollection,
   generateInsomniaCollection,
@@ -79,16 +83,17 @@ app.use(
 // Request Processing Middleware
 // ============================================
 
+// Initialize error tracking (unhandled rejections, uncaught exceptions)
+initializeErrorTracking();
+
 // Response time tracking (must be early to capture full request duration)
 app.use(responseTimeMiddleware);
 
-// Request ID for tracing
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const requestId = (req.headers['x-request-id'] as string) || uuidv4();
-  req.requestId = requestId;
-  res.setHeader('X-Request-ID', requestId);
-  next();
-});
+// Request context (ID, context logger, start time)
+app.use(requestContextMiddleware);
+
+// Request logging (logs completed requests)
+app.use(requestLoggingMiddleware);
 
 // Tuned compression - balance between speed and compression ratio
 app.use(
@@ -1551,18 +1556,5 @@ app.use(csrfErrorHandler);
 
 // Global error handler
 app.use(errorHandler);
-
-// ============================================
-// Extend Express Types
-// ============================================
-
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Express {
-    interface Request {
-      requestId?: string;
-    }
-  }
-}
 
 export default app;

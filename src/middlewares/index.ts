@@ -87,3 +87,9 @@ export {
   fieldSelectionMiddleware,
   ALLOWED_FIELDS,
 } from './apiOptimization.middleware';
+
+export {
+  requestContextMiddleware,
+  requestLoggingMiddleware,
+  getRequestDuration,
+} from './requestContext.middleware';

@@ -11,6 +11,8 @@ import {
   createPage,
   closePage,
   emulateDarkMode,
+  getTimeoutForPlan,
+  getNavigationTimeoutForPlan,
 } from '@config/puppeteer';
 import {
   generateStorageKey,
@@ -69,6 +71,7 @@ const DEFAULT_OPTIONS: IScreenshotOptions = {
   darkMode: false,
   blockAds: false,
   blockTrackers: false,
+  blockImages: false,
   waitUntil: 'networkidle2',
 };
 
@@ -165,6 +168,7 @@ function mergeOptions(dto: CreateScreenshotDTO): IScreenshotOptions {
     darkMode: dto.darkMode ?? DEFAULT_OPTIONS.darkMode,
     blockAds: dto.blockAds ?? DEFAULT_OPTIONS.blockAds,
     blockTrackers: dto.blockTrackers ?? DEFAULT_OPTIONS.blockTrackers,
+    blockImages: dto.blockImages ?? DEFAULT_OPTIONS.blockImages,
     waitUntil: dto.waitUntil ?? DEFAULT_OPTIONS.waitUntil,
   };
 }
@@ -307,6 +311,7 @@ export async function createScreenshot(
     page = await createPage(browser, {
       blockAds: options.blockAds,
       blockTrackers: options.blockTrackers,
+      blockImages: options.blockImages,
       userAgent: options.userAgent,
       headers: options.headers,
       cookies: options.cookies,
@@ -318,10 +323,18 @@ export async function createScreenshot(
       await emulateDarkMode(page);
     }
 
-    // Navigate to URL
+    // Get plan-based timeouts
+    const navigationTimeout = getNavigationTimeoutForPlan(user.subscription.plan);
+    const screenshotTimeout = getTimeoutForPlan(user.subscription.plan);
+
+    // Set page timeouts based on plan
+    page.setDefaultTimeout(screenshotTimeout);
+    page.setDefaultNavigationTimeout(navigationTimeout);
+
+    // Navigate to URL with plan-based timeout
     await page.goto(dto.url, {
       waitUntil: options.waitUntil,
-      timeout: config.puppeteer.timeout,
+      timeout: navigationTimeout,
     });
 
     // Wait for delay if specified

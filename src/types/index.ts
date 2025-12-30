@@ -149,6 +149,7 @@ export interface IScreenshotOptions {
   darkMode: boolean;
   blockAds: boolean;
   blockTrackers: boolean;
+  blockImages: boolean;
   waitUntil: 'load' | 'domcontentloaded' | 'networkidle0' | 'networkidle2';
 }
 
@@ -289,6 +290,7 @@ export interface CreateScreenshotDTO {
   darkMode?: boolean;
   blockAds?: boolean;
   blockTrackers?: boolean;
+  blockImages?: boolean;
   waitUntil?: 'load' | 'domcontentloaded' | 'networkidle0' | 'networkidle2';
   webhook?: string;
 }

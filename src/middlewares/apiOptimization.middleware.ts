@@ -79,14 +79,20 @@ export const responseTimeMiddleware = (
   // Store start time for potential use by other middleware
   res.locals.requestStartTime = start;
 
-  // Add listener for when response finishes
-  res.on('finish', () => {
+  // Store original end method
+  const originalEnd = res.end.bind(res);
+
+  // Override end to set response time header before sending
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  res.end = function (chunk?: any, encoding?: any, callback?: any): Response {
     const end = process.hrtime.bigint();
     const durationNs = Number(end - start);
     const durationMs = durationNs / 1e6;
 
-    // Set response time header (rounded to 2 decimal places)
-    res.setHeader('X-Response-Time', `${durationMs.toFixed(2)}ms`);
+    // Set response time header before ending response (if headers not sent)
+    if (!res.headersSent) {
+      res.setHeader('X-Response-Time', `${durationMs.toFixed(2)}ms`);
+    }
 
     // Log slow requests
     if (durationMs > SLOW_REQUEST_THRESHOLD) {
@@ -100,7 +106,9 @@ export const responseTimeMiddleware = (
         ip: req.ip,
       });
     }
-  });
+
+    return originalEnd(chunk, encoding, callback);
+  };
 
   next();
 };

@@ -11,6 +11,8 @@ import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import redoc from 'redoc-express';
 import YAML from 'yaml';
+import fs from 'fs';
+import path from 'path';
 
 import config from '@config/index';
 import swaggerSpec from '@config/swagger';
@@ -268,6 +270,135 @@ app.get('/docs/bruno.json', (_req: Request, res: Response) => {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Content-Disposition', 'attachment; filename="screenshot-api.bruno.json"');
   res.json(generateBrunoCollection());
+});
+
+// Markdown documentation pages
+const renderMarkdownPage = (title: string, content: string): string => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title} - Screenshot API</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-dark.min.css">
+  <style>
+    body {
+      background: #0d1117;
+      color: #f0f6fc;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+    .markdown-body {
+      background: transparent;
+    }
+    .markdown-body pre {
+      background: #161b22;
+      border: 1px solid #30363d;
+    }
+    .markdown-body code {
+      background: #161b22;
+    }
+    .markdown-body table {
+      display: table;
+      width: 100%;
+    }
+    .markdown-body table th, .markdown-body table td {
+      background: #161b22;
+      border-color: #30363d;
+    }
+    .nav-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #58a6ff;
+      text-decoration: none;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+    .nav-back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/developer" class="nav-back">&larr; Back to Developer Portal</a>
+    <article class="markdown-body">
+      ${content}
+    </article>
+  </div>
+</body>
+</html>
+`;
+
+// Simple markdown to HTML conversion (basic)
+const simpleMarkdownToHtml = (markdown: string): string => {
+  return markdown
+    // Headers
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    // Bold
+    .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+    // Italic
+    .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+    // Code blocks
+    .replace(/```(\w+)?\n([\s\S]*?)```/gim, '<pre><code class="language-$1">$2</code></pre>')
+    // Inline code
+    .replace(/`(.*?)`/gim, '<code>$1</code>')
+    // Links
+    .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2">$1</a>')
+    // Tables
+    .replace(/^\|(.+)\|$/gim, (match, content) => {
+      const cells = content.split('|').map((c: string) => c.trim());
+      const isHeader = cells.every((c: string) => /^-+$/.test(c));
+      if (isHeader) return '';
+      const tag = match.includes('---') ? 'th' : 'td';
+      return '<tr>' + cells.map((c: string) => '<' + tag + '>' + c + '</' + tag + '>').join('') + '</tr>';
+    })
+    // Horizontal rules
+    .replace(/^---$/gim, '<hr>')
+    // Paragraphs
+    .replace(/\n\n/gim, '</p><p>')
+    // Line breaks
+    .replace(/\n/gim, '<br>');
+};
+
+app.get('/docs/webhooks', (_req: Request, res: Response) => {
+  try {
+    const mdPath = path.join(__dirname, '../docs/WEBHOOKS.md');
+    const content = fs.readFileSync(mdPath, 'utf-8');
+    const html = simpleMarkdownToHtml(content);
+    res.send(renderMarkdownPage('Webhooks', html));
+  } catch {
+    res.redirect('/developer');
+  }
+});
+
+app.get('/docs/rate-limits', (_req: Request, res: Response) => {
+  try {
+    const mdPath = path.join(__dirname, '../docs/RATE_LIMITS.md');
+    const content = fs.readFileSync(mdPath, 'utf-8');
+    const html = simpleMarkdownToHtml(content);
+    res.send(renderMarkdownPage('Rate Limits', html));
+  } catch {
+    res.redirect('/developer');
+  }
+});
+
+app.get('/docs/changelog', (_req: Request, res: Response) => {
+  try {
+    const mdPath = path.join(__dirname, '../docs/CHANGELOG.md');
+    const content = fs.readFileSync(mdPath, 'utf-8');
+    const html = simpleMarkdownToHtml(content);
+    res.send(renderMarkdownPage('API Changelog', html));
+  } catch {
+    res.redirect('/developer');
+  }
 });
 
 // Swagger UI - API documentation with dark mode
@@ -1299,6 +1430,27 @@ app.get('/developer', (_req: Request, res: Response) => {
                 Documentation Hub
               </h3>
               <p>Central hub for all documentation resources and API information.</p>
+            </a>
+            <a href="/docs/webhooks" class="docs-card">
+              <h3>
+                <i class="fas fa-bell" style="color: var(--accent-purple);"></i>
+                Webhooks
+              </h3>
+              <p>Learn how to receive real-time notifications when screenshots complete. Includes signature verification.</p>
+            </a>
+            <a href="/docs/rate-limits" class="docs-card">
+              <h3>
+                <i class="fas fa-tachometer-alt" style="color: var(--accent-orange);"></i>
+                Rate Limits
+              </h3>
+              <p>Understand rate limits per plan, monthly quotas, and best practices for API usage.</p>
+            </a>
+            <a href="/docs/changelog" class="docs-card">
+              <h3>
+                <i class="fas fa-history" style="color: var(--accent-cyan);"></i>
+                Changelog
+              </h3>
+              <p>View API version history, new features, breaking changes, and migration guides.</p>
             </a>
           </div>
         </div>

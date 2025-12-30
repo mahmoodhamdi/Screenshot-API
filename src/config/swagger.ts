@@ -9,6 +9,54 @@ import { version } from '../../package.json';
 const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.3',
+    'x-rate-limits': {
+      description: 'Rate limits vary by subscription plan and endpoint type',
+      default: {
+        limit: 100,
+        window: 60,
+        description: 'Default rate limit for most endpoints',
+      },
+      auth: {
+        limit: 5,
+        window: 60,
+        description: 'Strict rate limit for authentication endpoints',
+      },
+      screenshots: {
+        limit: 10,
+        window: 60,
+        description: 'Default screenshot rate limit (overridden by plan)',
+      },
+      plans: {
+        free: {
+          rateLimit: 10,
+          screenshotsPerMonth: 100,
+          maxResolution: '1280x720',
+          formats: ['png', 'jpeg'],
+          features: ['basic'],
+        },
+        starter: {
+          rateLimit: 30,
+          screenshotsPerMonth: 2000,
+          maxResolution: '1920x1080',
+          formats: ['png', 'jpeg', 'webp'],
+          features: ['fullPage'],
+        },
+        professional: {
+          rateLimit: 100,
+          screenshotsPerMonth: 10000,
+          maxResolution: '3840x2160',
+          formats: ['png', 'jpeg', 'webp', 'pdf'],
+          features: ['fullPage', 'customHeaders', 'webhooks', 'priority'],
+        },
+        enterprise: {
+          rateLimit: 500,
+          screenshotsPerMonth: 50000,
+          maxResolution: '7680x4320',
+          formats: ['png', 'jpeg', 'webp', 'pdf'],
+          features: ['fullPage', 'customHeaders', 'webhooks', 'priority'],
+        },
+      },
+    },
     info: {
       title: 'Screenshot API',
       version,
@@ -86,6 +134,10 @@ Rate limits vary by subscription plan:
       {
         name: 'Analytics',
         description: 'Usage statistics and analytics',
+      },
+      {
+        name: 'Webhooks',
+        description: 'Webhook management and delivery history',
       },
     ],
     components: {
@@ -851,6 +903,141 @@ Rate limits vary by subscription plan:
                     description: 'Number of requests on this date',
                     example: 25,
                   },
+                },
+              },
+            },
+          },
+        },
+
+        // Webhook Schemas
+        WebhookAttempt: {
+          type: 'object',
+          description: 'Webhook delivery attempt record',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Unique webhook attempt ID',
+              example: '507f1f77bcf86cd799439011',
+            },
+            screenshotId: {
+              type: 'string',
+              description: 'Associated screenshot ID',
+              example: '507f1f77bcf86cd799439012',
+            },
+            url: {
+              type: 'string',
+              format: 'uri',
+              description: 'Webhook destination URL',
+              example: 'https://myapp.com/webhooks/screenshot',
+            },
+            status: {
+              type: 'string',
+              enum: ['pending', 'success', 'failed', 'dead_letter'],
+              description: 'Current delivery status',
+              example: 'success',
+            },
+            attempts: {
+              type: 'integer',
+              description: 'Number of delivery attempts made',
+              example: 1,
+            },
+            maxAttempts: {
+              type: 'integer',
+              description: 'Maximum retry attempts allowed',
+              example: 5,
+            },
+            lastAttemptAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Timestamp of the last delivery attempt',
+            },
+            nextRetryAt: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true,
+              description: 'Scheduled time for next retry (if applicable)',
+            },
+            responseStatus: {
+              type: 'integer',
+              nullable: true,
+              description: 'HTTP status code from last attempt',
+              example: 200,
+            },
+            responseBody: {
+              type: 'string',
+              nullable: true,
+              description: 'Response body from last attempt (truncated)',
+            },
+            error: {
+              type: 'string',
+              nullable: true,
+              description: 'Error message if delivery failed',
+            },
+            payload: {
+              type: 'object',
+              description: 'Webhook payload that was/will be sent',
+              properties: {
+                event: {
+                  type: 'string',
+                  enum: ['screenshot.completed', 'screenshot.failed'],
+                  example: 'screenshot.completed',
+                },
+                screenshotId: { type: 'string' },
+                url: { type: 'string' },
+                status: { type: 'string' },
+                result: {
+                  type: 'object',
+                  properties: {
+                    url: { type: 'string' },
+                    size: { type: 'integer' },
+                    duration: { type: 'integer' },
+                  },
+                },
+                timestamp: { type: 'string', format: 'date-time' },
+              },
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'When this webhook was created',
+            },
+          },
+        },
+
+        // Password Reset Token Validation Response
+        ResetTokenValidation: {
+          type: 'object',
+          properties: {
+            valid: {
+              type: 'boolean',
+              description: 'Whether the token is valid',
+              example: true,
+            },
+            message: {
+              type: 'string',
+              description: 'Validation result message',
+              example: 'Token is valid',
+            },
+          },
+        },
+
+        // Account Lockout Error
+        AccountLockedError: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: false },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string', example: 'ACCOUNT_LOCKED' },
+                message: {
+                  type: 'string',
+                  example: 'Account locked due to too many failed attempts. Try again in 15 minutes.',
+                },
+                lockoutEndsAt: {
+                  type: 'string',
+                  format: 'date-time',
+                  description: 'When the lockout period ends',
                 },
               },
             },

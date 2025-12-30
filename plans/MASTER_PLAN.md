@@ -17,10 +17,10 @@ This document outlines a comprehensive review and production-readiness plan for 
 | [Phase 2](#phase-2-complete-missing-implementations) | Complete Missing Implementations | COMPLETED | 4/4 |
 | [Phase 3](#phase-3-testing--quality) | Testing & Quality | NOT_STARTED | 0/5 |
 | [Phase 4](#phase-4-performance-optimization) | Performance Optimization | COMPLETED | 4/4 |
-| [Phase 5](#phase-5-polish--production-ready) | Polish & Production Ready | IN_PROGRESS | 1/3 |
+| [Phase 5](#phase-5-polish--production-ready) | Polish & Production Ready | IN_PROGRESS | 2/3 |
 
 **Total Milestones:** 21
-**Completed:** 14/21
+**Completed:** 15/21
 
 ---
 
@@ -333,15 +333,16 @@ This document outlines a comprehensive review and production-readiness plan for 
   - [x] Add log rotation configuration (winston-daily-rotate-file for production)
   - [x] Unit tests (31 tests - 16 audit + 15 error tracking)
 
-### Milestone 5.2: Documentation & API Contracts
+### Milestone 5.2: Documentation & API Contracts ✅
 - **Prompt File:** `plans/phase5-polish/M5.2-documentation.md`
-- **Status:** NOT_STARTED
+- **Status:** COMPLETED
+- **Completed Date:** 2025-12-30
 - **Checklist:**
-  - [ ] Update OpenAPI spec with all changes
-  - [ ] Add request/response examples
-  - [ ] Document rate limits per plan
-  - [ ] Update developer portal
-  - [ ] Create deployment guide
+  - [x] Update OpenAPI spec with all changes (x-rate-limits, WebhookAttempt schema, Webhooks tag)
+  - [x] Add request/response examples (code examples in WEBHOOKS.md)
+  - [x] Document rate limits per plan (docs/RATE_LIMITS.md)
+  - [x] Update developer portal (new doc cards, routes for docs)
+  - [x] Create API changelog (docs/CHANGELOG.md with v1.1.0 release notes)
 
 ### Milestone 5.3: Production Checklist
 - **Prompt File:** `plans/phase5-polish/M5.3-production-checklist.md`
@@ -388,7 +389,7 @@ Each prompt file contains:
 
 ### Last Updated: 2025-12-30
 ### Current Phase: Phase 5 - Polish & Production Ready (IN_PROGRESS)
-### Current Milestone: M5.1 Completed - Starting M5.2
+### Current Milestone: M5.2 Completed - Starting M5.3
 ### Blockers: None
 
 ### Session Log
@@ -407,6 +408,7 @@ Each prompt file contains:
 | 2025-12-30 | 11 | M4.3 Puppeteer Optimization | COMPLETED | Compiled regex, page cache, blockImages, resource type filtering |
 | 2025-12-30 | 12 | M4.4 API Optimization | COMPLETED | ETag, compression tuning, response time, field selection |
 | 2025-12-30 | 13 | M5.1 Error Handling & Logging | COMPLETED | Context logger, request IDs, audit logging, error tracking |
+| 2025-12-30 | 14 | M5.2 Documentation & API Contracts | COMPLETED | OpenAPI x-rate-limits, WEBHOOKS.md, RATE_LIMITS.md, CHANGELOG.md |
 
 ---
 

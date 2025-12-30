@@ -127,9 +127,8 @@ describe('API Optimization Middleware', () => {
 
   describe('responseTimeMiddleware', () => {
     let mockReq: Partial<Request>;
-    let mockRes: Partial<Response>;
+    let mockRes: Partial<Response> & { end: jest.Mock };
     let mockNext: NextFunction;
-    let finishCallback: () => void;
 
     beforeEach(() => {
       mockReq = {
@@ -141,11 +140,8 @@ describe('API Optimization Middleware', () => {
       };
       mockRes = {
         setHeader: jest.fn(),
-        on: jest.fn().mockImplementation((event: string, callback: () => void) => {
-          if (event === 'finish') {
-            finishCallback = callback;
-          }
-        }),
+        headersSent: false,
+        end: jest.fn().mockReturnThis(),
         locals: {},
         statusCode: 200,
       };
@@ -159,17 +155,19 @@ describe('API Optimization Middleware', () => {
       expect(typeof mockRes.locals?.requestStartTime).toBe('bigint');
     });
 
-    it('should add finish event listener', () => {
+    it('should override res.end method', () => {
+      const originalEnd = mockRes.end;
       responseTimeMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockRes.on).toHaveBeenCalledWith('finish', expect.any(Function));
+      // res.end should be overridden
+      expect(mockRes.end).not.toBe(originalEnd);
     });
 
-    it('should set X-Response-Time header on finish', () => {
+    it('should set X-Response-Time header when res.end is called', () => {
       responseTimeMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
-      // Simulate response finish
-      finishCallback();
+      // Call the overridden end method
+      mockRes.end();
 
       expect(mockRes.setHeader).toHaveBeenCalledWith(
         'X-Response-Time',

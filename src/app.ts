@@ -17,6 +17,7 @@ import path from 'path';
 import config from '@config/index';
 import swaggerSpec from '@config/swagger';
 import routes from '@routes/index';
+import healthRoutes from '@routes/health.routes';
 import { errorHandler, notFoundHandler } from '@middlewares/error.middleware';
 import { csrfToken, conditionalCsrf, csrfErrorHandler } from '@middlewares/csrf.middleware';
 import { nonceMiddleware, routeAwareSecurityMiddleware } from '@middlewares/nonce.middleware';
@@ -1536,47 +1537,8 @@ function escapeHtml(text: string): string {
 // API version prefix
 app.use(`/api/${config.api.version}`, routes);
 
-// Root health check with detailed service status
-app.get('/health', async (_req: Request, res: Response) => {
-  const { checkRedisHealth, getRedisStatus } = await import('@config/redis');
-  const { getRateLimitCircuitState, getRateLimitCircuitStats } =
-    await import('@middlewares/rateLimit.middleware');
-
-  // Check Redis health
-  const redisHealth = await checkRedisHealth();
-  const circuitState = getRateLimitCircuitState();
-  const circuitStats = getRateLimitCircuitStats();
-
-  // Determine overall health status
-  const isHealthy = redisHealth.connected;
-  const isDegraded = !redisHealth.connected && circuitState !== 'CLOSED';
-
-  res.status(isHealthy ? 200 : isDegraded ? 200 : 503).json({
-    success: true,
-    status: isHealthy ? 'healthy' : isDegraded ? 'degraded' : 'unhealthy',
-    service: 'screenshot-api',
-    version: config.api.version,
-    timestamp: new Date().toISOString(),
-    services: {
-      redis: {
-        status: redisHealth.connected ? 'up' : 'down',
-        connectionStatus: getRedisStatus(),
-        latencyMs: redisHealth.latencyMs,
-        error: redisHealth.error,
-      },
-      rateLimiter: {
-        circuitBreaker: circuitState,
-        usingFallback: circuitState === 'OPEN',
-        stats: {
-          failures: circuitStats.failures,
-          successes: circuitStats.successes,
-          totalRequests: circuitStats.totalRequests,
-          fallbackRequests: circuitStats.fallbackRequests,
-        },
-      },
-    },
-  });
-});
+// Health check routes (includes /health/live, /health/ready, /health/startup)
+app.use('/health', healthRoutes);
 
 // Root endpoint - Landing page
 app.get('/', (_req: Request, res: Response) => {

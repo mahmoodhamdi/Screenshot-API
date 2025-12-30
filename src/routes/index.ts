@@ -9,6 +9,7 @@ import screenshotRoutes from './screenshot.routes';
 import subscriptionRoutes from './subscription.routes';
 import analyticsRoutes from './analytics.routes';
 import webhookRoutes from './webhook.routes';
+import healthRoutes from './health.routes';
 
 const router = Router();
 
@@ -31,14 +32,8 @@ router.use('/analytics', analyticsRoutes);
 // Webhook routes
 router.use('/webhooks', webhookRoutes);
 
-// Health check
-router.get('/health', (_req: Request, res: Response) => {
-  res.json({
-    success: true,
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-  });
-});
+// Health routes (also available at root /health)
+router.use('/health', healthRoutes);
 
 // API info
 router.get('/', (_req: Request, res: Response) => {

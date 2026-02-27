@@ -126,21 +126,36 @@ Configured in tsconfig.json:
 - **cache.ts**: Redis caching with `getOrSet()`, `invalidate()`, cache warming, hit/miss metrics
 - **pagination.ts**: Cursor-based pagination for large datasets
 
-## Development Workflow
+## Environment Setup
+
+```bash
+# Copy and configure environment
+cp .env.example .env
+# Edit .env with your MongoDB URI, Redis host, JWT secrets, Stripe keys, etc.
+
+# Start dependencies (MongoDB + Redis)
+docker-compose up -d mongodb redis
+
+# Or use Docker for everything
+docker-compose up -d
+```
+
+Key environment variables:
+- `MONGODB_URI` - MongoDB connection string
+- `REDIS_HOST/REDIS_PORT` - Redis for caching/rate limiting (optional, has in-memory fallback)
+- `JWT_SECRET/JWT_REFRESH_SECRET` - Must be 32+ characters
+- `STRIPE_SECRET_KEY/STRIPE_WEBHOOK_SECRET` - For payment processing
+- `PUPPETEER_MAX_CONCURRENT` - Browser pool size (default: 5)
+
+## Development Reference
 
 ### Plans Directory
-The `plans/` directory contains milestone-based development plans:
-```
-plans/
-├── MASTER_PLAN.md              # Overall progress tracking (check this first)
-├── phase1-security/            # Security fixes (COMPLETED)
-├── phase2-features/            # Feature implementations (COMPLETED)
-├── phase3-testing/             # Test coverage (NOT_STARTED)
-├── phase4-performance/         # Performance optimization (IN_PROGRESS)
-└── phase5-polish/              # Production readiness (NOT_STARTED)
-```
-
-Each milestone file (`M*.md`) contains context, requirements, files to modify, and acceptance criteria.
+The `plans/MASTER_PLAN.md` file tracks all development phases (all 21 milestones completed):
+- Phase 1: Security (CSRF, JWT fixes, auth hardening, CSP, Redis failsafe)
+- Phase 2: Features (password reset, email service, webhook security, input validation)
+- Phase 3: Testing (endpoint tests, service tests, E2E tests)
+- Phase 4: Performance (DB optimization, caching, Puppeteer tuning, API optimization)
+- Phase 5: Polish (logging, documentation, production checklist)
 
 ## Views Architecture
 

@@ -1,6 +1,6 @@
 {
   "name": "screenshot-api",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Professional Screenshot API with Puppeteer - Capture website screenshots with customizable options",
   "main": "dist/server.js",
   "scripts": {

@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
@@ -64,3 +63,4 @@ temp/
 *.key
 credentials.json
 service-account.json
+.agent/

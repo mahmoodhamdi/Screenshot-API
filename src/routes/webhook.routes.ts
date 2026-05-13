@@ -7,11 +7,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateJWT, defaultRateLimit } from '@middlewares/index';
 import { validators } from '@middlewares/validation.middleware';
 import { AuthenticatedRequest } from '@/types';
-import {
-  getUserWebhooks,
-  getWebhookStatus,
-  retryWebhook,
-} from '@queues/webhook.queue';
+import { getUserWebhooks, getWebhookStatus, retryWebhook } from '@queues/webhook.queue';
 import User from '@models/user.model';
 import { generateWebhookSecret } from '@utils/webhookSignature';
 

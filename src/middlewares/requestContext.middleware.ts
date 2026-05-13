@@ -32,11 +32,7 @@ declare global {
  * - Creates context logger with request metadata
  * - Tracks request start time
  */
-export const requestContextMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const requestContextMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   // Generate or use existing request ID
   const requestId = (req.headers['x-request-id'] as string) || uuidv4();
   req.requestId = requestId;
@@ -73,11 +69,7 @@ export const getRequestDuration = (req: Request): number => {
 /**
  * Log completed requests with duration and status
  */
-export const requestLoggingMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const requestLoggingMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   // Log after response is sent
   res.on('finish', () => {
     const durationMs = getRequestDuration(req);

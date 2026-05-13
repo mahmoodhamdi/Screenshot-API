@@ -153,11 +153,7 @@ async function buildHealthStatus(includeDetails = false): Promise<HealthStatus> 
 
   // MongoDB being down is critical
   const overallStatus: HealthStatus['status'] =
-    mongoHealth.status === 'down'
-      ? 'unhealthy'
-      : hasDown || hasDegraded
-        ? 'degraded'
-        : 'healthy';
+    mongoHealth.status === 'down' ? 'unhealthy' : hasDown || hasDegraded ? 'degraded' : 'healthy';
 
   const health: HealthStatus = {
     status: overallStatus,

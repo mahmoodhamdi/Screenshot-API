@@ -89,6 +89,7 @@ function hasCrlfInjection(value: string): boolean {
  * Check for null bytes in header value
  */
 function hasNullBytes(value: string): boolean {
+  // eslint-disable-next-line no-control-regex
   return /\x00/.test(value);
 }
 

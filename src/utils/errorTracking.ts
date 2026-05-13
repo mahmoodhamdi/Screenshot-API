@@ -193,20 +193,14 @@ export const captureRequestError = (
 /**
  * Capture a fatal error (application-breaking)
  */
-export const captureFatalError = (
-  error: Error,
-  context?: Omit<ErrorContext, 'severity'>
-): void => {
+export const captureFatalError = (error: Error, context?: Omit<ErrorContext, 'severity'>): void => {
   captureError(error, { ...context, severity: 'fatal' });
 };
 
 /**
  * Capture a warning-level error
  */
-export const captureWarning = (
-  error: Error,
-  context?: Omit<ErrorContext, 'severity'>
-): void => {
+export const captureWarning = (error: Error, context?: Omit<ErrorContext, 'severity'>): void => {
   captureError(error, { ...context, severity: 'warning' });
 };
 
@@ -238,8 +232,7 @@ export function withErrorTracking<T extends (...args: unknown[]) => Promise<unkn
  */
 export const setupUnhandledRejectionTracking = (): void => {
   process.on('unhandledRejection', (reason: unknown) => {
-    const error =
-      reason instanceof Error ? reason : new Error(String(reason));
+    const error = reason instanceof Error ? reason : new Error(String(reason));
     captureFatalError(error, {
       tags: { type: 'unhandled_rejection' },
     });

@@ -6,10 +6,7 @@
 import Bull, { Job, Queue } from 'bull';
 import { config } from '@config/index';
 import { WebhookAttempt, IWebhookAttempt } from '@models/webhookAttempt.model';
-import {
-  createWebhookSignature,
-  createWebhookHeaders,
-} from '@utils/webhookSignature';
+import { createWebhookSignature, createWebhookHeaders } from '@utils/webhookSignature';
 import { logger } from '@utils/logger';
 import User from '@models/user.model';
 import { Types } from 'mongoose';
@@ -170,10 +167,7 @@ export function getWebhookQueue(): Queue<WebhookJobData> {
         await attempt.save();
 
         // Add retry job
-        await getWebhookQueue().add(
-          { attemptId },
-          { delay }
-        );
+        await getWebhookQueue().add({ attemptId }, { delay });
 
         logger.warn('Webhook failed, scheduling retry', {
           attemptId,

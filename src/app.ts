@@ -21,10 +21,7 @@ import healthRoutes from '@routes/health.routes';
 import { errorHandler, notFoundHandler } from '@middlewares/error.middleware';
 import { csrfToken, conditionalCsrf, csrfErrorHandler } from '@middlewares/csrf.middleware';
 import { nonceMiddleware, routeAwareSecurityMiddleware } from '@middlewares/nonce.middleware';
-import {
-  etagMiddleware,
-  responseTimeMiddleware,
-} from '@middlewares/apiOptimization.middleware';
+import { etagMiddleware, responseTimeMiddleware } from '@middlewares/apiOptimization.middleware';
 import {
   requestContextMiddleware,
   requestLoggingMiddleware,
@@ -338,35 +335,41 @@ const renderMarkdownPage = (title: string, content: string): string => `
 
 // Simple markdown to HTML conversion (basic)
 const simpleMarkdownToHtml = (markdown: string): string => {
-  return markdown
-    // Headers
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    // Bold
-    .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
-    // Italic
-    .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-    // Code blocks
-    .replace(/```(\w+)?\n([\s\S]*?)```/gim, '<pre><code class="language-$1">$2</code></pre>')
-    // Inline code
-    .replace(/`(.*?)`/gim, '<code>$1</code>')
-    // Links
-    .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2">$1</a>')
-    // Tables
-    .replace(/^\|(.+)\|$/gim, (match, content) => {
-      const cells = content.split('|').map((c: string) => c.trim());
-      const isHeader = cells.every((c: string) => /^-+$/.test(c));
-      if (isHeader) return '';
-      const tag = match.includes('---') ? 'th' : 'td';
-      return '<tr>' + cells.map((c: string) => '<' + tag + '>' + c + '</' + tag + '>').join('') + '</tr>';
-    })
-    // Horizontal rules
-    .replace(/^---$/gim, '<hr>')
-    // Paragraphs
-    .replace(/\n\n/gim, '</p><p>')
-    // Line breaks
-    .replace(/\n/gim, '<br>');
+  return (
+    markdown
+      // Headers
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      // Bold
+      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+      // Italic
+      .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+      // Code blocks
+      .replace(/```(\w+)?\n([\s\S]*?)```/gim, '<pre><code class="language-$1">$2</code></pre>')
+      // Inline code
+      .replace(/`(.*?)`/gim, '<code>$1</code>')
+      // Links
+      .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2">$1</a>')
+      // Tables
+      .replace(/^\|(.+)\|$/gim, (match, content) => {
+        const cells = content.split('|').map((c: string) => c.trim());
+        const isHeader = cells.every((c: string) => /^-+$/.test(c));
+        if (isHeader) return '';
+        const tag = match.includes('---') ? 'th' : 'td';
+        return (
+          '<tr>' +
+          cells.map((c: string) => '<' + tag + '>' + c + '</' + tag + '>').join('') +
+          '</tr>'
+        );
+      })
+      // Horizontal rules
+      .replace(/^---$/gim, '<hr>')
+      // Paragraphs
+      .replace(/\n\n/gim, '</p><p>')
+      // Line breaks
+      .replace(/\n/gim, '<br>')
+  );
 };
 
 app.get('/docs/webhooks', (_req: Request, res: Response) => {

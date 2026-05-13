@@ -76,11 +76,7 @@ export function analyticsCache(customTtl?: number) {
  * Middleware to skip cache (force fresh data)
  * Use query param ?fresh=true to bypass cache
  */
-export function skipCacheOnFresh(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function skipCacheOnFresh(req: Request, res: Response, next: NextFunction): void {
   if (req.query.fresh === 'true') {
     // Set a flag to skip cache in subsequent middleware
     res.locals.skipCache = true;

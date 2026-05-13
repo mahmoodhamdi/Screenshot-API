@@ -320,6 +320,8 @@ export function isBlockedScheme(scheme: string): boolean {
  * Check if file extension is blocked
  */
 export function isBlockedExtension(ext: string): boolean {
-  const normalizedExt = ext.toLowerCase().startsWith('.') ? ext.toLowerCase() : `.${ext.toLowerCase()}`;
+  const normalizedExt = ext.toLowerCase().startsWith('.')
+    ? ext.toLowerCase()
+    : `.${ext.toLowerCase()}`;
   return BLOCKED_EXTENSIONS.has(normalizedExt);
 }

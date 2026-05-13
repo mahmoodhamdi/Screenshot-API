@@ -69,11 +69,7 @@ const SLOW_REQUEST_THRESHOLD = 1000;
  * Response time tracking middleware
  * Adds X-Response-Time header and logs slow requests
  */
-export const responseTimeMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const responseTimeMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   const start = process.hrtime.bigint();
 
   // Store start time for potential use by other middleware

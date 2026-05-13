@@ -64,7 +64,10 @@ export function verifyWebhookSignature(
 
   // Create the expected signature
   const signaturePayload = `${timestamp}.${payload}`;
-  const expectedSignature = crypto.createHmac('sha256', secret).update(signaturePayload).digest('hex');
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(signaturePayload)
+    .digest('hex');
 
   // Extract the hash from the signature header (remove 'sha256=' prefix)
   const providedHash = signature.replace(/^sha256=/, '');

@@ -47,7 +47,8 @@ function isValidCookieName(name: string): boolean {
     return false;
   }
   // Control chars (0x00-0x1F, 0x7F) and separators
-  const invalidChars = /[\x00-\x1f\x7f()<>@,;:\\"\/\[\]?={} \t]/;
+  // eslint-disable-next-line no-control-regex
+  const invalidChars = /[\x00-\x1f\x7f()<>@,;:\\"/[\]?={} \t]/;
   return !invalidChars.test(name);
 }
 
@@ -60,6 +61,7 @@ function isValidCookieValue(value: string): boolean {
     return false;
   }
   // Control chars and problematic characters
+  // eslint-disable-next-line no-control-regex
   const invalidChars = /[\x00-\x1f\x7f;\\]/;
   return !invalidChars.test(value);
 }
@@ -108,6 +110,7 @@ function isValidPath(path: string): boolean {
   }
 
   // Check for null bytes or control characters
+  // eslint-disable-next-line no-control-regex
   if (/[\x00-\x1f\x7f]/.test(path)) {
     return false;
   }

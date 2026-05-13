@@ -144,7 +144,9 @@ export async function paginateWithCursor<T>(
       // For descending order, get items less than cursor
       // For ascending order, get items greater than cursor
       const operator = sortOrder === -1 ? '$lt' : '$gt';
-      filter[sortField as keyof FilterQuery<T>] = { [operator]: cursorValue } as unknown as FilterQuery<T>[keyof FilterQuery<T>];
+      filter[sortField as keyof FilterQuery<T>] = {
+        [operator]: cursorValue,
+      } as unknown as FilterQuery<T>[keyof FilterQuery<T>];
     }
   }
 
@@ -185,7 +187,7 @@ export async function paginateWithCursor<T>(
 
   // Generate cursors
   let nextCursor: string | null = null;
-  let prevCursor: string | null = cursor || null;
+  const prevCursor: string | null = cursor || null;
 
   if (hasMore && data.length > 0) {
     const lastDoc = data[data.length - 1] as Record<string, unknown>;
@@ -263,14 +265,7 @@ export async function paginateWithOffset<T>(
   model: Model<T>,
   options: OffsetPaginationOptions<T> = {}
 ): Promise<OffsetPaginationResult<T>> {
-  const {
-    query = {},
-    page = 1,
-    limit = 20,
-    sort = { createdAt: -1 },
-    select,
-    populate,
-  } = options;
+  const { query = {}, page = 1, limit = 20, sort = { createdAt: -1 }, select, populate } = options;
 
   // Ensure values are within bounds
   const safePage = Math.max(1, page);

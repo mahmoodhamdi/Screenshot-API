@@ -171,7 +171,7 @@ export function validatePasswordStrength(
     feedback.push('Consider using at least 12 characters');
   }
 
-  if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/`~]/.test(password)) {
+  if (!/[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/`~]/.test(password)) {
     feedback.push('Consider adding special characters');
   }
 

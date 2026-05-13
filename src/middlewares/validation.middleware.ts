@@ -167,15 +167,12 @@ export const createScreenshotSchema = z.object({
     .string()
     .url('Invalid webhook URL')
     .optional()
-    .refine(
-      (url) => !url || isValidWebhookUrlInternal(url),
-      {
-        message:
-          config.env === 'production'
-            ? 'Webhook URL must use HTTPS and cannot target internal addresses'
-            : 'Webhook URL cannot target internal addresses',
-      }
-    ),
+    .refine((url) => !url || isValidWebhookUrlInternal(url), {
+      message:
+        config.env === 'production'
+          ? 'Webhook URL must use HTTPS and cannot target internal addresses'
+          : 'Webhook URL cannot target internal addresses',
+    }),
 });
 
 /**

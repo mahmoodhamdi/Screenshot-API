@@ -114,7 +114,7 @@ export function getCacheStats(): {
  */
 export function resetCacheStats(): void {
   for (const key of Object.keys(metrics)) {
-    metrics[key as keyof typeof metrics] = { hits: 0, misses: 0, errors: 0 };
+    metrics[key] = { hits: 0, misses: 0, errors: 0 };
   }
 }
 
@@ -364,7 +364,8 @@ export async function setCachedAnalytics<T>(
   const cacheKey = CACHE_KEYS.ANALYTICS(userId, path, queryHash);
 
   // Use shorter TTL for overview endpoint
-  const cacheTtl = ttl ?? (path.includes('overview') ? CACHE_TTL.ANALYTICS_OVERVIEW : CACHE_TTL.ANALYTICS);
+  const cacheTtl =
+    ttl ?? (path.includes('overview') ? CACHE_TTL.ANALYTICS_OVERVIEW : CACHE_TTL.ANALYTICS);
 
   try {
     await setCache(cacheKey, data, cacheTtl);

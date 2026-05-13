@@ -374,11 +374,12 @@ const cleanupBrowserPool = async (): Promise<void> => {
         browserPool.delete(id);
         logger.info('Cleaned up browser instance', {
           browserId: id,
-          reason: instance.memoryUsage > poolConfig.memoryThresholdMb * 1024 * 1024
-            ? 'high_memory'
-            : instance.usageCount >= poolConfig.browserMaxUsageCount
-              ? 'max_usage'
-              : 'age_or_idle',
+          reason:
+            instance.memoryUsage > poolConfig.memoryThresholdMb * 1024 * 1024
+              ? 'high_memory'
+              : instance.usageCount >= poolConfig.browserMaxUsageCount
+                ? 'max_usage'
+                : 'age_or_idle',
         });
       } catch (error) {
         logger.error('Error closing browser:', { browserId: id, error });
@@ -497,10 +498,7 @@ export interface CreatePageOptions {
  * Setup optimized request interception
  * Only enables interception when needed for performance
  */
-const setupRequestInterception = async (
-  page: Page,
-  options: CreatePageOptions
-): Promise<void> => {
+const setupRequestInterception = async (page: Page, options: CreatePageOptions): Promise<void> => {
   const needsInterception =
     options.blockAds ||
     options.blockTrackers ||
@@ -554,10 +552,7 @@ const setupRequestInterception = async (
  * @param options - Page configuration options
  * @returns Configured page
  */
-export const createPage = async (
-  browser: Browser,
-  options?: CreatePageOptions
-): Promise<Page> => {
+export const createPage = async (browser: Browser, options?: CreatePageOptions): Promise<Page> => {
   const page = await browser.newPage();
 
   // Set viewport

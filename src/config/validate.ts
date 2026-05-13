@@ -208,11 +208,7 @@ export function checkRequiredServices(): {
   return {
     database: !!process.env.MONGODB_URI,
     redis: !!(process.env.REDIS_HOST && process.env.REDIS_PORT),
-    email: !!(
-      process.env.SMTP_HOST &&
-      process.env.SMTP_USER &&
-      process.env.SMTP_PASS
-    ),
+    email: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
     storage:
       process.env.STORAGE_TYPE === 'local' ||
       !!(
@@ -220,9 +216,7 @@ export function checkRequiredServices(): {
         process.env.AWS_SECRET_ACCESS_KEY &&
         process.env.AWS_S3_BUCKET
       ),
-    payments: !!(
-      process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET
-    ),
+    payments: !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET),
   };
 }
 

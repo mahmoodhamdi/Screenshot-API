@@ -1032,7 +1032,8 @@ Rate limits vary by subscription plan:
                 code: { type: 'string', example: 'ACCOUNT_LOCKED' },
                 message: {
                   type: 'string',
-                  example: 'Account locked due to too many failed attempts. Try again in 15 minutes.',
+                  example:
+                    'Account locked due to too many failed attempts. Try again in 15 minutes.',
                 },
                 lockoutEndsAt: {
                   type: 'string',

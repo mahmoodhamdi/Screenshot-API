@@ -756,7 +756,7 @@ export async function getAvailablePlansAsync(): Promise<
     description: p.description,
     price: p.price,
     screenshotsPerMonth: p.screenshotsPerMonth,
-    priceId: p.plan !== 'free' ? config.stripe.priceIds[p.plan as Exclude<PlanType, 'free'>] : undefined,
+    priceId: p.plan !== 'free' ? config.stripe.priceIds[p.plan] : undefined,
   }));
 }
 

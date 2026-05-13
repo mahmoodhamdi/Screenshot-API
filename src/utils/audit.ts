@@ -183,7 +183,9 @@ export const auditFailure = (
   userId: string,
   resourceType: AuditResourceType,
   errorMessage: string,
-  options?: Partial<Omit<AuditEvent, 'action' | 'userId' | 'resourceType' | 'result' | 'errorMessage'>>
+  options?: Partial<
+    Omit<AuditEvent, 'action' | 'userId' | 'resourceType' | 'result' | 'errorMessage'>
+  >
 ): void => {
   auditLog({
     action,
@@ -203,9 +205,25 @@ export const auditFailure = (
  * Log authentication event
  */
 export const auditAuth = (
-  action: 'login' | 'logout' | 'login_failed' | 'password_reset_request' | 'password_reset_complete' | 'password_change' | 'email_verified' | 'account_locked' | 'account_unlocked',
+  action:
+    | 'login'
+    | 'logout'
+    | 'login_failed'
+    | 'password_reset_request'
+    | 'password_reset_complete'
+    | 'password_change'
+    | 'email_verified'
+    | 'account_locked'
+    | 'account_unlocked',
   userId: string,
-  options?: { ip?: string; userAgent?: string; requestId?: string; details?: Record<string, unknown>; result?: 'success' | 'failure'; errorMessage?: string }
+  options?: {
+    ip?: string;
+    userAgent?: string;
+    requestId?: string;
+    details?: Record<string, unknown>;
+    result?: 'success' | 'failure';
+    errorMessage?: string;
+  }
 ): void => {
   auditLog({
     action: `auth.${action}`,
@@ -224,7 +242,12 @@ export const auditApiKey = (
   action: 'create' | 'delete' | 'revoke' | 'regenerate',
   userId: string,
   apiKeyId: string,
-  options?: { ip?: string; userAgent?: string; requestId?: string; details?: Record<string, unknown> }
+  options?: {
+    ip?: string;
+    userAgent?: string;
+    requestId?: string;
+    details?: Record<string, unknown>;
+  }
 ): void => {
   auditLog({
     action: `api_key.${action}`,
@@ -243,7 +266,14 @@ export const auditScreenshot = (
   action: 'create' | 'delete' | 'download' | 'retry',
   userId: string,
   screenshotId: string,
-  options?: { ip?: string; userAgent?: string; requestId?: string; details?: Record<string, unknown>; result?: 'success' | 'failure'; errorMessage?: string }
+  options?: {
+    ip?: string;
+    userAgent?: string;
+    requestId?: string;
+    details?: Record<string, unknown>;
+    result?: 'success' | 'failure';
+    errorMessage?: string;
+  }
 ): void => {
   auditLog({
     action: `screenshot.${action}`,
@@ -262,7 +292,12 @@ export const auditSubscription = (
   action: 'create' | 'update' | 'cancel' | 'payment_failed' | 'payment_success',
   userId: string,
   subscriptionId?: string,
-  options?: { ip?: string; userAgent?: string; requestId?: string; details?: Record<string, unknown> }
+  options?: {
+    ip?: string;
+    userAgent?: string;
+    requestId?: string;
+    details?: Record<string, unknown>;
+  }
 ): void => {
   auditLog({
     action: `subscription.${action}`,
